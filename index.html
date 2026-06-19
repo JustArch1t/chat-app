@@ -5,58 +5,33 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Group-Chat</title>
     <style>
-        :root {
-            --text-light: #e2e8f0;
-            --glass-bg: rgba(255, 255, 255, 0.08); 
-            --glass-border: rgba(255, 255, 255, 0.2);
-        }
-
+        :root { --text-light: #e2e8f0; --glass-bg: rgba(255, 255, 255, 0.08); --glass-border: rgba(255, 255, 255, 0.2); }
         * { box-sizing: border-box; margin: 0; padding: 0; }
-        
-        body { 
-            font-family: 'Segoe UI', Roboto, Helvetica, sans-serif; 
-            background: #04080e url('background.jpg') no-repeat center center fixed;
-            background-size: cover;
-            color: var(--text-light);
-            display: flex; justify-content: center; align-items: center; height: 100dvh; width: 100vw;
-            overflow: hidden; margin: 0; padding: 0; position: fixed; top: 0; left: 0;
-        }
-
-        #box {
-            width: 95vw; max-width: 380px; height: 80vh; 
-            background: var(--glass-bg);
-            backdrop-filter: blur(0.5px); -webkit-backdrop-filter: blur(0.5px);
-            border-radius: 20px; display: flex; flex-direction: column; overflow: hidden; 
-            border: 1px solid var(--glass-border); box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
-        }
-
+        body { font-family: 'Segoe UI', Roboto, Helvetica, sans-serif; background: #04080e url('background.jpg') no-repeat center center fixed; background-size: cover; color: var(--text-light); display: flex; justify-content: center; align-items: center; height: 100dvh; width: 100vw; overflow: hidden; }
+        #box { width: 95vw; max-width: 380px; height: 80vh; background: var(--glass-bg); backdrop-filter: blur(0.5px); border-radius: 20px; display: flex; flex-direction: column; overflow: hidden; border: 1px solid var(--glass-border); box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2); }
         .chat-header { padding: 16px 20px; border-bottom: 1px solid rgba(255, 255, 255, 0.1); }
-        .chat-header h3 { font-size: 1.1rem; font-weight: 600; color: #ffffff; }
-
-        #msg { flex-grow: 1; overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 12px; -webkit-overflow-scrolling: touch; }
-
+        #msg { flex-grow: 1; overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 12px; }
         .msg-wrapper { display: flex; flex-direction: column; max-width: 85%; padding: 8px 12px; border-radius: 12px; }
         .msg-wrapper.self { align-self: flex-end; background: rgba(255, 255, 255, 0.15); border-bottom-right-radius: 2px; }
         .msg-wrapper.other { align-self: flex-start; background: rgba(0, 0, 0, 0.3); border-bottom-left-radius: 2px; }
-
         .user-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; font-size: 0.75rem; font-weight: bold; min-height: 24px; }
         .actions { display: flex; gap: 8px; margin-left: 20px; flex-shrink: 0; }
-        
-        .btn-small {
-            border: none; border-radius: 50%; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center;
-            cursor: pointer; font-size: 0.85rem; font-weight: bold; -webkit-tap-highlight-color: transparent;
-        }
+        .btn-small { border: none; border-radius: 50%; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 0.85rem; font-weight: bold; }
         .delete-btn { background: rgba(255, 77, 77, 0.25); color: #ff4d4d; }
         .edit-btn { background: rgba(255, 255, 255, 0.25); color: #ffffff; }
-
-        .bubble { font-size: 0.9rem; line-height: 1.3; white-space: pre-wrap; word-break: break-word; color: #ffffff; }
+        .bubble { font-size: 0.9rem; line-height: 1.3; white-space: pre-wrap; color: #ffffff; }
         .edit-input { width: 100%; background: rgba(0,0,0,0.4); border: 1px solid #fff; color: #fff; padding: 6px; border-radius: 6px; outline: none; }
-
-        #in { padding: 12px; display: flex; gap: 8px; align-items: center; background: rgba(0, 0, 0, 0.2); }
+        
+        #in { padding: 12px; display: flex; gap: 8px; align-items: center; background: rgba(0, 0, 0, 0.2); position: relative; }
+        .user-section { display: flex; align-items: center; gap: 5px; }
+        #u { width: 70px; text-align: center; font-weight: bold; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 20px; padding: 10px; color: white; }
         .input-container { position: relative; flex-grow: 1; display: flex; align-items: center; background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 20px; }
         input { background: transparent; border: none; color: white; padding: 10px 16px; outline: none; font-size: 0.9rem; width: 100%; }
-        #u { width: 70px; text-align: center; font-weight: bold; }
-        button.send-btn { background: transparent; border: none; padding: 5px; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+        
+        #emoji-picker { position: absolute; bottom: 65px; left: 10px; right: 10px; background: #1a1a1a; border: 1px solid #444; padding: 10px; border-radius: 10px; display: none; grid-template-columns: repeat(8, 1fr); gap: 8px; max-height: 200px; overflow-y: auto; }
+        .emoji-item { cursor: pointer; font-size: 1.3rem; text-align: center; }
+        button.emoji-btn { background: transparent; border: none; font-size: 1.2rem; cursor: pointer; padding: 0 5px; }
+        button.send-btn { background: transparent; border: none; padding: 5px; cursor: pointer; }
         button.send-btn svg { fill: #ffffff; width: 20px; height: 20px; }
     </style>
 </head>
@@ -65,97 +40,13 @@
 <div id="box">
     <div class="chat-header"><h3>Group-Chat</h3></div>
     <div id="msg"></div>
+    <div id="emoji-picker"></div>
     <div id="in">
-        <input type="text" id="u" placeholder="Name" value="User1" maxlength="10">
+        <div class="user-section">
+            <input type="text" id="u" placeholder="Name" value="User1" maxlength="10">
+            <button class="emoji-btn" onclick="togglePicker()">😊</button>
+        </div>
         <div class="input-container">
             <input type="text" id="m" placeholder="Message..." autocomplete="off">
         </div>
-        <button class="send-btn" id="sendBtn"><svg viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg></button>
-    </div>
-</div>
-
-<script>
-    let syncChannel;
-    try { syncChannel = new BroadcastChannel('vercel_neon_group_chat'); } catch(e) {}
-    
-    const msgContainer = document.getElementById("msg");
-    const mInput = document.getElementById("m");
-    const uInput = document.getElementById("u");
-    const sendBtn = document.getElementById("sendBtn");
-
-    function sendMessage() {
-        const u = uInput.value.trim() || "Guest", m = mInput.value.trim();
-        if(!m) return;
-        const id = Date.now() + Math.random().toString(36).substr(2, 5);
-        renderBubble(id, u, m, u);
-        if (syncChannel) syncChannel.postMessage({ action: 'send', id, user: u, text: m });
-        mInput.value = "";
-    }
-
-    // Standard click event works best for mobile button stability
-    sendBtn.addEventListener('click', sendMessage);
-    
-    mInput.addEventListener("keydown", (e) => { 
-        if (e.key === "Enter") { 
-            sendMessage(); 
-        } 
-    });
-
-    function renderBubble(id, user, text, referenceUser) {
-        const isSelf = (user === referenceUser);
-        const wrapper = document.createElement("div");
-        wrapper.className = `msg-wrapper ${isSelf ? 'self' : 'other'}`;
-        wrapper.id = `msg-${id}`;
-        
-        const actionsHtml = isSelf ? `
-            <div class="actions">
-                <button class="btn-small edit-btn" onclick="editBubble('${id}')">✎</button>
-                <button class="btn-small delete-btn" onclick="removeBubble('${id}')">×</button>
-            </div>
-        ` : '';
-
-        wrapper.innerHTML = `
-            <div class="user-header">
-                <span>${escapeHtml(user)}</span>
-                ${actionsHtml}
-            </div>
-            <div class="bubble">${escapeHtml(text)}</div>
-        `;
-        msgContainer.appendChild(wrapper);
-        msgContainer.scrollTop = msgContainer.scrollHeight;
-    }
-
-    function editBubble(id) {
-        const bubbleEl = document.querySelector(`#msg-${id} .bubble`);
-        const currentText = bubbleEl.innerText;
-        bubbleEl.innerHTML = `<input type="text" class="edit-input" value="${escapeHtml(currentText)}" onkeydown="if(event.key==='Enter') saveEdit('${id}', this.value)">`;
-        bubbleEl.querySelector('input').focus();
-    }
-
-    function saveEdit(id, newText) {
-        const trimmed = newText.trim();
-        const bubbleEl = document.querySelector(`#msg-${id} .bubble`);
-        bubbleEl.innerText = trimmed || " ";
-        if (syncChannel) syncChannel.postMessage({ action: 'edit', id, text: trimmed });
-    }
-
-    if (syncChannel) {
-        syncChannel.onmessage = (e) => {
-            if (e.data.action === 'send') renderBubble(e.data.id, e.data.user, e.data.text, uInput.value.trim());
-            else if (e.data.action === 'delete') document.getElementById(`msg-${e.data.id}`)?.remove();
-            else if (e.data.action === 'edit') {
-                const el = document.querySelector(`#msg-${e.data.id} .bubble`);
-                if(el) el.innerText = e.data.text;
-            }
-        };
-    }
-
-    function removeBubble(id) {
-        document.getElementById(`msg-${id}`)?.remove();
-        if (syncChannel) syncChannel.postMessage({ action: 'delete', id });
-    }
-
-    function escapeHtml(str) { return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"); }
-</script>
-</body>
-</html>
+        <button class="send-btn" id="sendBtn"><svg viewBox="0 0 24 24"><path d="M2.01 21L23 12 M2.01 3 2 10l15 2-15 2z"/></svg></button>
