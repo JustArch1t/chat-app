@@ -52,21 +52,30 @@
         const div = document.createElement("div");
         div.id = s.key;
         div.className = `msg-container ${d.user === myId ? 'mine' : 'theirs'}`;
-        div.innerHTML = `<div class="bubble">${d.text} ${d.user === myId ? 
-            '<span style="margin-left:10px; cursor:pointer" onclick="edit(\''+s.key+'\')">✎</span>' +
-            '<span style="margin-left:10px; cursor:pointer; color:#ff4d4d" onclick="del(\''+s.key+'\')">✖</span>' : ''}</div>`;
+        div.innerHTML = `<div class="bubble"><span class="txt">${d.text}</span> ${d.user === myId ? 
+            '<span style="margin-left:10px; cursor:pointer" onclick="enableEdit(\''+s.key+'\')">✎</span>' +
+            '<span style="margin-left:10px; cursor:pointer; color:#ff4d4d" onclick="db.child(\''+s.key+'\').remove()">✖</span>' : ''}</div>`;
         document.getElementById("msg").appendChild(div);
         document.getElementById("msg").scrollTop = document.getElementById("msg").scrollHeight;
     });
 
-    window.edit = (key) => {
-        const newTxt = prompt("Edit message:");
-        if(newTxt) db.child(key).update({ text: newTxt });
+    // Inline edit logic
+    window.enableEdit = (key) => {
+        const bubble = document.getElementById(key).querySelector('.txt');
+        const oldText = bubble.innerText;
+        bubble.innerHTML = `<input type="text" value="${oldText}" id="edit-box" style="color:black; border-radius:5px;">`;
+        const input = document.getElementById("edit-box");
+        input.focus();
+        // Save on Enter
+        input.onkeypress = (e) => { if(e.key === 'Enter') db.child(key).update({ text: input.value }); };
+        // Save on tap-away
+        input.onblur = () => db.child(key).update({ text: input.value });
     };
 
-    window.del = (key) => db.child(key).remove();
-
-    db.on('child_changed', (s) => { document.getElementById(s.key).querySelector('.bubble').firstChild.textContent = s.val().text + ' '; });
+    db.on('child_changed', (s) => {
+        const el = document.getElementById(s.key);
+        if(el) el.querySelector('.txt').innerText = s.val().text;
+    });
     db.on('child_removed', (s) => document.getElementById(s.key)?.remove());
 </script>
 </body>
