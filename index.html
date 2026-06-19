@@ -39,18 +39,20 @@
         .msg-wrapper.self { align-self: flex-end; background: rgba(255, 255, 255, 0.15); border-bottom-right-radius: 2px; }
         .msg-wrapper.other { align-self: flex-start; background: rgba(0, 0, 0, 0.3); border-bottom-left-radius: 2px; }
 
-        .user-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; font-size: 0.7rem; font-weight: bold; }
-        .actions { display: flex; gap: 6px; }
+        /* User header and button container spacing fixed */
+        .user-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; font-size: 0.75rem; font-weight: bold; min-height: 24px; }
+        .actions { display: flex; gap: 8px; margin-left: 20px; flex-shrink: 0; }
         
+        /* Larger buttons */
         .btn-small {
-            border: none; border-radius: 50%; width: 20px; height: 20px; display: flex; align-items: center; justify-content: center;
-            cursor: pointer; font-size: 0.7rem; font-weight: bold; -webkit-tap-highlight-color: transparent;
+            border: none; border-radius: 50%; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center;
+            cursor: pointer; font-size: 0.85rem; font-weight: bold; -webkit-tap-highlight-color: transparent;
         }
-        .delete-btn { background: rgba(255, 77, 77, 0.2); color: #ff4d4d; }
-        .edit-btn { background: rgba(255, 255, 255, 0.2); color: #ffffff; }
+        .delete-btn { background: rgba(255, 77, 77, 0.25); color: #ff4d4d; }
+        .edit-btn { background: rgba(255, 255, 255, 0.25); color: #ffffff; }
 
         .bubble { font-size: 0.9rem; line-height: 1.3; white-space: pre-wrap; word-break: break-word; color: #ffffff; }
-        .edit-input { width: 100%; background: rgba(0,0,0,0.3); border: 1px solid #fff; color: #fff; padding: 4px; border-radius: 4px; }
+        .edit-input { width: 100%; background: rgba(0,0,0,0.4); border: 1px solid #fff; color: #fff; padding: 6px; border-radius: 6px; outline: none; }
 
         #in { padding: 12px; display: flex; gap: 8px; align-items: center; background: rgba(0, 0, 0, 0.2); }
         .input-container { position: relative; flex-grow: 1; display: flex; align-items: center; background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 20px; }
@@ -101,7 +103,6 @@
         wrapper.className = `msg-wrapper ${isSelf ? 'self' : 'other'}`;
         wrapper.id = `msg-${id}`;
         
-        // Show buttons only if it's your own message
         const actionsHtml = isSelf ? `
             <div class="actions">
                 <button class="btn-small edit-btn" onclick="editBubble('${id}')">✎</button>
@@ -128,9 +129,11 @@
     }
 
     function saveEdit(id, newText) {
-        if(!newText.trim()) return;
-        document.querySelector(`#msg-${id} .bubble`).innerText = newText;
-        if (syncChannel) syncChannel.postMessage({ action: 'edit', id, text: newText });
+        const trimmed = newText.trim();
+        if(!trimmed) return;
+        const bubbleEl = document.querySelector(`#msg-${id} .bubble`);
+        bubbleEl.innerHTML = escapeHtml(trimmed);
+        if (syncChannel) syncChannel.postMessage({ action: 'edit', id, text: trimmed });
     }
 
     if (syncChannel) {
