@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Group-Chat</title>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
@@ -15,6 +16,8 @@
             padding: 20px; 
             display: flex; 
             justify-content: center; 
+            height: 100vh;
+            margin: 0;
         }
         #box { 
             width: 100%; 
@@ -24,14 +27,17 @@
             padding: 20px; 
             border-radius: 15px; 
             border: 1px solid rgba(255, 255, 255, 0.2); 
+            display: flex;
+            flex-direction: column;
         }
-        #msg { height: 70vh; overflow-y: auto; border: 1px solid rgba(255, 255, 255, 0.1); padding: 10px; margin-bottom: 10px; }
+        #msg { flex-grow: 1; overflow-y: auto; border: 1px solid rgba(255, 255, 255, 0.1); padding: 10px; margin-bottom: 10px; }
         .msg-wrapper { margin-bottom: 10px; padding: 5px; border-bottom: 1px solid rgba(255, 255, 255, 0.05); }
         .bubble { display: inline-block; margin-right: 10px; }
         #in { display: flex; gap: 10px; }
-        #emoji-picker { display: none; margin-bottom: 10px; }
-        .emoji-item { cursor: pointer; font-size: 1.2rem; margin-right: 5px; }
+        #emoji-picker { display: none; margin-bottom: 10px; grid-template-columns: repeat(6, 1fr); gap: 5px; }
+        .emoji-item { cursor: pointer; font-size: 1.2rem; text-align: center; }
         input { background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: white; padding: 5px; }
+        button { cursor: pointer; }
     </style>
 </head>
 <body>
@@ -41,7 +47,7 @@
     <div id="emoji-picker"></div>
     <div id="in">
         <input type="text" id="u" placeholder="Name" style="width: 80px;">
-        <button onclick="document.getElementById('emoji-picker').style.display = (document.getElementById('emoji-picker').style.display === 'block' ? 'none' : 'block')">😊</button>
+        <button onclick="document.getElementById('emoji-picker').style.display = (document.getElementById('emoji-picker').style.display === 'grid' ? 'none' : 'grid')">😊</button>
         <input type="text" id="m" placeholder="Message..." style="flex-grow:1;">
         <button id="sendBtn">Send</button>
     </div>
@@ -63,6 +69,7 @@
         const myId = "User-" + Math.floor(Math.random() * 1000);
         document.getElementById("u").value = myId;
 
+        // Send function
         function send() {
             const m = document.getElementById("m").value.trim();
             if(m) {
@@ -70,27 +77,7 @@
                 document.getElementById("m").value = "";
             }
         }
-
         document.getElementById("sendBtn").onclick = send;
         document.getElementById("m").onkeypress = (e) => { if(e.key === 'Enter') send(); };
 
-        db.on('child_added', (s) => {
-            const d = s.val();
-            const div = document.createElement("div");
-            div.id = s.key;
-            div.className = "msg-wrapper";
-            
-            let html = `<b>${d.user}:</b> <span class="bubble">${d.text}</span>`;
-            
-            if (d.user === document.getElementById("u").value) {
-                html += `<span style="margin-left: 10px;">
-                            <button id="edit-${s.key}" style="cursor:pointer;">✎</button> 
-                            <button id="del-${s.key}" style="cursor:pointer; color:red;">X</button>
-                         </span>`;
-            }
-            
-            div.innerHTML = html;
-            document.getElementById("msg").appendChild(div);
-            
-            if (d.user === document.getElementById("u").value) {
-                document.getElementById(`del-${s.key}`).onclick = () => db.child(s.
+        // Render messages with
