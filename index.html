@@ -5,43 +5,42 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Group-Chat</title>
     <style>
-        :root { --glass-bg: rgba(255, 255, 255, 0.1); --border: rgba(255, 255, 255, 0.2); }
         * { box-sizing: border-box; margin: 0; padding: 0; }
-        body { font-family: 'Segoe UI', sans-serif; background: #04080e; display: flex; justify-content: center; align-items: center; height: 100dvh; overflow: hidden; }
+        body { font-family: sans-serif; background: #04080e; display: flex; justify-content: center; align-items: center; height: 100dvh; overflow: hidden; color: white; }
         
-        #box { width: 95vw; max-width: 400px; height: 90vh; background: var(--glass-bg); backdrop-filter: blur(15px); border-radius: 20px; border: 1px solid var(--border); display: flex; flex-direction: column; overflow: hidden; }
-        .chat-header { padding: 15px; border-bottom: 1px solid var(--border); color: white; font-weight: bold; text-align: center; }
+        #box { width: 95vw; max-width: 400px; height: 90vh; background: rgba(255, 255, 255, 0.08); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.2); border-radius: 20px; display: flex; flex-direction: column; overflow: hidden; }
+        .header { padding: 15px; border-bottom: 1px solid rgba(255, 255, 255, 0.2); font-weight: bold; text-align: center; }
         
-        #msg { flex: 1; overflow-y: auto; padding: 15px; display: flex; flex-direction: column; gap: 10px; }
-        .msg-wrapper { max-width: 80%; padding: 10px; border-radius: 12px; color: white; background: rgba(255,255,255,0.1); align-self: flex-start; }
-        .self { align-self: flex-end; background: rgba(0, 120, 255, 0.5); }
-        
-        .actions { display: flex; gap: 8px; margin-top: 5px; justify-content: flex-end; }
-        .btn { background: rgba(255,255,255,0.2); border: none; color: white; padding: 4px 8px; border-radius: 6px; cursor: pointer; font-size: 0.75rem; }
+        #msg-container { flex: 1; overflow-y: auto; padding: 15px; display: flex; flex-direction: column; gap: 10px; }
+        .msg { background: rgba(255, 255, 255, 0.1); padding: 10px; border-radius: 10px; max-width: 80%; align-self: flex-start; }
+        .msg.self { align-self: flex-end; background: rgba(0, 120, 255, 0.4); }
+        .actions { display: flex; gap: 5px; margin-top: 5px; }
+        .action-btn { background: rgba(255,255,255,0.2); border: none; color: white; padding: 2px 8px; border-radius: 4px; cursor: pointer; font-size: 0.7rem; }
 
-        #in { padding: 10px; background: rgba(0,0,0,0.3); border-top: 1px solid var(--border); }
-        .controls { display: flex; align-items: center; gap: 5px; margin-bottom: 5px; }
-        #u { width: 80px; padding: 8px; border-radius: 8px; border: none; background: rgba(255,255,255,0.1); color: white; }
-        .msg-area { display: flex; align-items: center; gap: 5px; }
-        #m { flex: 1; padding: 10px; border-radius: 8px; border: none; background: rgba(255,255,255,0.1); color: white; }
-        button { padding: 10px; border-radius: 8px; border: none; background: #007bff; color: white; cursor: pointer; }
+        .input-area { padding: 10px; background: rgba(0,0,0,0.2); border-top: 1px solid rgba(255,255,255,0.1); }
+        .controls { display: flex; gap: 5px; margin-bottom: 5px; }
+        input { padding: 8px; border-radius: 6px; border: none; background: rgba(255,255,255,0.1); color: white; }
+        #u { width: 80px; }
+        .msg-input { display: flex; gap: 5px; }
+        #m { flex: 1; }
+        button { padding: 8px 12px; border-radius: 6px; border: none; background: #007bff; color: white; cursor: pointer; }
 
-        #emoji-picker { display: none; grid-template-columns: repeat(6, 1fr); gap: 5px; padding: 5px; background: #222; }
-        .emoji { cursor: pointer; font-size: 1.2rem; text-align: center; }
+        #emoji-box { display: none; grid-template-columns: repeat(5, 1fr); gap: 5px; padding: 5px; background: #222; }
+        .emoji { cursor: pointer; text-align: center; font-size: 1.2rem; }
     </style>
 </head>
 <body>
 
 <div id="box">
-    <div class="chat-header">Group Chat</div>
-    <div id="msg"></div>
-    <div id="emoji-picker"></div>
-    <div id="in">
+    <div class="header">Group Chat</div>
+    <div id="msg-container"></div>
+    <div id="emoji-box"></div>
+    <div class="input-area">
         <div class="controls">
             <input type="text" id="u" value="User1" maxlength="10">
-            <button onclick="document.getElementById('emoji-picker').style.display = (document.getElementById('emoji-picker').style.display === 'grid' ? 'none' : 'grid')">😊</button>
+            <button onclick="document.getElementById('emoji-box').style.display = (document.getElementById('emoji-box').style.display === 'grid' ? 'none' : 'grid')">😊</button>
         </div>
-        <div class="msg-area">
+        <div class="msg-input">
             <input type="text" id="m" placeholder="Message...">
             <button id="sendBtn">Send</button>
         </div>
@@ -49,40 +48,41 @@
 </div>
 
 <script>
-    const picker = document.getElementById('emoji-picker');
-    const emojis = ['😀', '😂', '😍', '😭', '💀', '👍', '🔥', '❤️', '😢', '😎', '😅', '🤣', '😇', '🙃', '🥰', '🤩', '🤪', '👊', '🤟', '👌'];
+    const emojis = ['😀', '😂', '😍', '😭', '💀', '👍', '🔥', '❤️', '😢', '😎'];
+    const emojiBox = document.getElementById('emoji-box');
+    
     emojis.forEach(e => {
-        const div = document.createElement('div');
-        div.className = 'emoji'; div.innerText = e;
-        div.onclick = () => { document.getElementById('m').value += e; };
-        picker.appendChild(div);
+        const d = document.createElement('div');
+        d.className = 'emoji'; d.innerText = e;
+        d.onclick = () => document.getElementById('m').value += e;
+        emojiBox.appendChild(d);
     });
 
-    function send() {
+    function addMessage() {
         const u = document.getElementById('u').value;
         const m = document.getElementById('m').value;
-        if(!m.trim()) return;
+        if (!m.trim()) return;
+        
         const div = document.createElement('div');
-        div.className = 'msg-wrapper self';
+        div.className = 'msg self';
         div.innerHTML = `<div><b>${u}:</b> ${m}</div>
             <div class="actions">
-                <button class="btn" onclick="edit(this)">✎</button>
-                <button class="btn" onclick="this.parentElement.parentElement.remove()">×</button>
+                <button class="action-btn" onclick="edit(this)">Edit</button>
+                <button class="action-btn" onclick="this.parentElement.parentElement.remove()">Delete</button>
             </div>`;
-        document.getElementById('msg').appendChild(div);
-        document.getElementById('msg').scrollTop = document.getElementById('msg').scrollHeight;
+        document.getElementById('msg-container').appendChild(div);
         document.getElementById('m').value = '';
+        document.getElementById('msg-container').scrollTop = document.getElementById('msg-container').scrollHeight;
     }
 
     function edit(btn) {
-        const msgDiv = btn.parentElement.parentElement.querySelector('div');
-        const oldText = msgDiv.innerText.split(': ')[1];
-        const newText = prompt("Edit message:", oldText);
-        if(newText) msgDiv.innerHTML = `<b>${document.getElementById('u').value}:</b> ${newText}`;
+        const textDiv = btn.parentElement.parentElement.querySelector('div');
+        const newText = prompt("Edit message:", textDiv.innerText.split(': ')[1]);
+        if (newText) textDiv.innerHTML = `<b>${document.getElementById('u').value}:</b> ${newText}`;
     }
 
-    document.getElementById('sendBtn').onclick = send;
-    document.getElementById('m').onkeydown = (e) => { if(e.key === 'Enter') send(); };
+    document.getElementById('sendBtn').onclick = addMessage;
+    document.getElementById('m').onkeydown = (e) => { if (e.key === 'Enter') addMessage(); };
 </script>
 </body>
 </html>
