@@ -90,10 +90,18 @@
         renderBubble(id, u, m, u);
         if (syncChannel) syncChannel.postMessage({ action: 'send', id, user: u, text: m });
         mInput.value = "";
+        mInput.focus();
     }
 
-    sendBtn.addEventListener('pointerdown', (e) => { e.preventDefault(); s(); });
-    mInput.addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); s(); } });
+    // Using pointerup ensures the action fires once the touch is released
+    sendBtn.addEventListener('pointerup', (e) => { e.preventDefault(); s(); });
+    
+    mInput.addEventListener("keydown", (e) => { 
+        if (e.key === "Enter") { 
+            e.preventDefault(); 
+            s(); 
+        } 
+    });
 
     function renderBubble(id, user, text, referenceUser) {
         const isSelf = (user === referenceUser);
@@ -120,10 +128,4 @@
     }
 
     function editBubble(id) {
-        const bubbleEl = document.querySelector(`#msg-${id} .bubble`);
-        const currentText = bubbleEl.innerText;
-        bubbleEl.innerHTML = `<input type="text" class="edit-input" value="${escapeHtml(currentText)}" onkeydown="if(event.key==='Enter') saveEdit('${id}', this.value)">`;
-        bubbleEl.querySelector('input').focus();
-    }
-
-    function saveEdit(id, newText)
+        const bubbleEl = document.querySelector(`#msg-${id}
