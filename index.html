@@ -45,55 +45,6 @@
 </div>
 
 <script>
-    // 1. Firebase Config
     const firebaseConfig = {
         apiKey: "AIzaSyBXjcr21ZUrF5ty2JKH4BuaLqjHaqHitD8",
-        authDomain: "chat-room-e8152.firebaseapp.com",
-        databaseURL: "https://chat-room-e8152-default-rtdb.asia-south1.firebasedatabase.app",
-        projectId: "chat-room-e8152",
-        storageBucket: "chat-room-e8152.firebasestorage.app",
-        messagingSenderId: "875122406489",
-        appId: "1:875122406489:web:c0f66c7a7903b9e87eed48"
-    };
-
-    firebase.initializeApp(firebaseConfig);
-    const db = firebase.database().ref('messages');
-    
-    // UI Setup
-    const myIdentity = "User-" + Math.floor(Math.random() * 1000);
-    document.getElementById("u").value = myIdentity;
-
-    function togglePicker() { 
-        const p = document.getElementById('emoji-picker'); 
-        p.style.display = (p.style.display === 'grid') ? 'none' : 'grid'; 
-    }
-
-    ['😀', '😂', '😍', '😭', '💀', '👍'].forEach(e => {
-        const s = document.createElement('span');
-        s.className = 'emoji-item'; s.innerText = e;
-        s.onclick = () => document.getElementById('m').value += e;
-        document.getElementById('emoji-picker').appendChild(s);
-    });
-
-    // Cloud Logic
-    document.getElementById("sendBtn").onclick = () => {
-        const u = document.getElementById("u").value;
-        const m = document.getElementById("m").value.trim();
-        if(m) {
-            db.push({ user: u, text: m, ts: Date.now() });
-            document.getElementById("m").value = "";
-        }
-    };
-
-    db.on('child_added', (s) => {
-        const d = s.val();
-        const div = document.createElement("div");
-        div.className = `msg-wrapper ${d.user === myIdentity ? 'self' : 'other'}`;
-        div.innerHTML = `<div class="user-header">${d.user}</div><div class="bubble">${d.text}</div>`;
-        const container = document.getElementById("msg");
-        container.appendChild(div);
-        container.scrollTop = container.scrollHeight;
-    });
-</script>
-</body>
-</html>
+        authDomain: "
