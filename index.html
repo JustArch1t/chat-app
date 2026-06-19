@@ -18,8 +18,17 @@
             background: #04080e url('background.jpg') no-repeat center center fixed;
             background-size: cover;
             color: var(--text-light);
-            display: flex; justify-content: center; align-items: center; height: 100vh;
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            height: 100dvh; 
+            width: 100vw;
             overflow: hidden;
+            margin: 0;
+            padding: 0;
+            position: fixed;
+            top: 0;
+            left: 0;
         }
 
         #box {
@@ -113,18 +122,4 @@
             <div class="user-header"><span>${escapeHtml(user)}</span><button class="delete-btn" onclick="removeBubble('${id}')">X</button></div>
             <div class="bubble">${escapeHtml(text)}</div>
         `;
-        msgContainer.appendChild(wrapper);
-        msgContainer.scrollTop = msgContainer.scrollHeight;
-    }
-
-    if (syncChannel) {
-        syncChannel.onmessage = (e) => {
-            if (e.data.action === 'send') renderBubble(e.data.id, e.data.user, e.data.text, uInput.value.trim());
-            else if (e.data.action === 'delete') { const el = document.getElementById(`msg-${e.data.id}`); if (el) el.remove(); }
-        };
-    }
-
-    function s() {
-        const u = uInput.value.trim() || "Guest", m = mInput.value.trim();
-        if(!m) return;
-        const id = Date.now() + Math
+        msgContainer.appendChild
