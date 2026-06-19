@@ -92,6 +92,7 @@
         mInput.value = "";
     }
 
+    // Standard click event works best for mobile button stability
     sendBtn.addEventListener('click', sendMessage);
     
     mInput.addEventListener("keydown", (e) => { 
@@ -141,4 +142,20 @@
     if (syncChannel) {
         syncChannel.onmessage = (e) => {
             if (e.data.action === 'send') renderBubble(e.data.id, e.data.user, e.data.text, uInput.value.trim());
-            else if (e.data.action === 'delete') document.getElementById(`msg-${e.data.
+            else if (e.data.action === 'delete') document.getElementById(`msg-${e.data.id}`)?.remove();
+            else if (e.data.action === 'edit') {
+                const el = document.querySelector(`#msg-${e.data.id} .bubble`);
+                if(el) el.innerText = e.data.text;
+            }
+        };
+    }
+
+    function removeBubble(id) {
+        document.getElementById(`msg-${id}`)?.remove();
+        if (syncChannel) syncChannel.postMessage({ action: 'delete', id });
+    }
+
+    function escapeHtml(str) { return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"); }
+</script>
+</body>
+</html>
