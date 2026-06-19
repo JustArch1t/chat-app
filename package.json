@@ -1,7 +1,7 @@
 {
-  "name": "chat-app",
+  "name": "group-chat",
   "version": "1.0.0",
-  "description": "Global multi-network chat",
+  "description": "Neon Dark Dynamic Local Group Chat",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"
