@@ -46,7 +46,7 @@
         .bubble { font-size: 0.95rem; line-height: 1.4; white-space: pre-wrap; word-break: break-word; color: #f8fafc; }
 
         .delete-btn {
-            background: transparent; border: none; color: #ef4444; font-size: 0.75rem; cursor: pointer; opacity: 0.4; transition: opacity 0.2s;
+            background: transparent; border: none; color: #ef4444; font-size: 0.75rem; cursor: pointer; opacity: 0.5; transition: opacity 0.2s;
         }
         .delete-btn:hover { opacity: 1; text-shadow: 0 0 4px #ef4444; }
 
@@ -79,3 +79,107 @@
     <div id="msg"></div>
     
     <div id="in">
+        <input type="text" id="u" placeholder="Name" value="User1" maxlength="10">
+        <input type="text" id="m" placeholder="Type a message..." autocomplete="off">
+        <button class="send-btn" onclick="s()">Send</button>
+    </div>
+</div>
+
+<script>
+    // Initialize standard cross-tab synchronization link safely
+    let syncChannel;
+    try {
+        syncChannel = new BroadcastChannel('vercel_neon_group_chat');
+    } catch(e) {
+        console.log("BroadcastChannel not supported or limited in this window context");
+    }
+    
+    const msgContainer = document.getElementById("msg");
+    const mInput = document.getElementById("m");
+    const uInput = document.getElementById("u");
+
+    // Listen for Enter key press inside the message text input field
+    mInput.addEventListener("keydown", (e) => {
+        if (e.key === "Enter" && !e.shiftKey) {
+            e.preventDefault(); 
+            s();
+        }
+    });
+
+    // Generate unique user neon colors using a quick string hash algorithm
+    function getUserColor(username) {
+        const neonColors = ['#00f0ff', '#ff007f', '#39ff14', '#ffb703', '#9d4edd', '#ff4d6d', '#00e5ff', '#ccff00'];
+        let hash = 0;
+        for (let i = 0; i < username.length; i++) {
+            hash = username.charCodeAt(i) + ((hash << 5) - hash);
+        }
+        const index = Math.abs(hash) % neonColors.length;
+        return neonColors[index];
+    }
+
+    function renderBubble(id, user, text, referenceUser) {
+        const isSelf = (user === referenceUser);
+        const nameColor = getUserColor(user);
+
+        const wrapper = document.createElement("div");
+        wrapper.className = `msg-wrapper ${isSelf ? 'self' : 'other'}`;
+        wrapper.id = `msg-${id}`;
+
+        wrapper.innerHTML = `
+            <div class="user-header">
+                <span style="color: ${nameColor}">${escapeHtml(user)}</span>
+                <button class="delete-btn" onclick="removeBubble('${id}')">Delete</button>
+            </div>
+            <div class="bubble">${escapeHtml(text)}</div>
+        `;
+
+        msgContainer.appendChild(wrapper);
+        msgContainer.scrollTop = msgContainer.scrollHeight;
+    }
+
+    // Intercept data packets fired from alternative browser frames safely
+    if (syncChannel) {
+        syncChannel.onmessage = (e) => {
+            const packet = e.data;
+            if (packet.action === 'send') {
+                renderBubble(packet.id, packet.user, packet.text, uInput.value.trim());
+            } else if (packet.action === 'delete') {
+                const el = document.getElementById(`msg-${packet.id}`);
+                if (el) el.remove();
+            }
+        };
+    }
+
+    function s() {
+        const u = uInput.value.trim() || "Guest";
+        const m = mInput.value.trim();
+        if(!m) return;
+
+        const uniqueId = Date.now() + Math.random().toString(36).substr(2, 5);
+        
+        // Show immediately in current window frame
+        renderBubble(uniqueId, u, m, u);
+        
+        // Push payload across network channel link safely
+        if (syncChannel) {
+            syncChannel.postMessage({ action: 'send', id: uniqueId, user: u, text: m });
+        }
+        mInput.value = "";
+    }
+
+    function removeBubble(id) {
+        const el = document.getElementById(`msg-${id}`);
+        if (el) el.remove();
+        
+        // Fire removal broadcast command out to alternative tabs safely
+        if (syncChannel) {
+            syncChannel.postMessage({ action: 'delete', id: id });
+        }
+    }
+
+    function escapeHtml(str) {
+        return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    }
+</script>
+</body>
+</html>
