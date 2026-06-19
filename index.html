@@ -32,7 +32,7 @@
     <div id="msg"></div>
     <div id="in">
         <input type="text" id="u" style="width: 50px; flex-grow: 0;" readonly>
-        <button class="action-btn" onclick="document.getElementById('m').value += '😊'">😊</button>
+        <button class="action-btn" onclick="addEmoji('😊')">😊</button>
         <input type="text" id="m" placeholder="Msg...">
         <button id="sendBtn" class="action-btn">➤</button>
     </div>
@@ -50,6 +50,14 @@
     const myId = "User-" + Math.floor(Math.random() * 1000);
     document.getElementById("u").value = myId;
 
+    // Emoji Logic
+    window.addEmoji = (emoji) => {
+        const input = document.getElementById('m');
+        input.value += emoji;
+        input.focus();
+    };
+
+    // Send Logic
     function sendMessage() {
         const m = document.getElementById("m");
         if(m.value.trim() !== "") {
@@ -57,10 +65,10 @@
             m.value = "";
         }
     }
-
     document.getElementById("sendBtn").onclick = sendMessage;
-    document.getElementById("m").addEventListener("keypress", (e) => { if(e.key === "Enter") sendMessage(); });
+    document.getElementById("m").onkeypress = (e) => { if(e.key === "Enter") sendMessage(); };
 
+    // Render Logic
     db.on('child_added', (s) => {
         const d = s.val();
         const div = document.createElement("div");
@@ -73,6 +81,7 @@
         document.getElementById("msg").scrollTop = document.getElementById("msg").scrollHeight;
     });
 
+    // Edit Logic
     window.edit = (key) => {
         const bubble = document.getElementById(key).querySelector('.bubble');
         const oldText = bubble.querySelector('.txt').innerText;
