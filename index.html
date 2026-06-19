@@ -18,90 +18,46 @@
             background: #04080e url('background.jpg') no-repeat center center fixed;
             background-size: cover;
             color: var(--text-light);
-            display: flex; 
-            justify-content: center; 
-            align-items: center; 
-            height: 100dvh; 
-            width: 100vw;
-            overflow: hidden;
-            margin: 0;
-            padding: 0;
-            position: fixed;
-            top: 0;
-            left: 0;
+            display: flex; justify-content: center; align-items: center; height: 100dvh; width: 100vw;
+            overflow: hidden; margin: 0; padding: 0; position: fixed; top: 0; left: 0;
         }
 
         #box {
             width: 95vw; max-width: 380px; height: 80vh; 
             background: var(--glass-bg);
             backdrop-filter: blur(0.5px); -webkit-backdrop-filter: blur(0.5px);
-            border-radius: 20px; display: flex; flex-direction: column; 
-            overflow: hidden; 
-            border: 1px solid var(--glass-border); 
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+            border-radius: 20px; display: flex; flex-direction: column; overflow: hidden; 
+            border: 1px solid var(--glass-border); box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
         }
 
-        .chat-header {
-            padding: 16px 20px; border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-        }
+        .chat-header { padding: 16px 20px; border-bottom: 1px solid rgba(255, 255, 255, 0.1); }
         .chat-header h3 { font-size: 1.1rem; font-weight: 600; color: #ffffff; }
 
-        #msg { 
-            flex-grow: 1; overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 12px;
-            -webkit-overflow-scrolling: touch; 
-        }
+        #msg { flex-grow: 1; overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 12px; -webkit-overflow-scrolling: touch; }
 
         .msg-wrapper { display: flex; flex-direction: column; max-width: 85%; padding: 8px 12px; border-radius: 12px; }
-        
-        .msg-wrapper.self { 
-            align-self: flex-end; background: rgba(255, 255, 255, 0.15); border-bottom-right-radius: 2px; 
-        }
-        
-        .msg-wrapper.other { 
-            align-self: flex-start; background: rgba(0, 0, 0, 0.3); border-bottom-left-radius: 2px; 
-        }
+        .msg-wrapper.self { align-self: flex-end; background: rgba(255, 255, 255, 0.15); border-bottom-right-radius: 2px; }
+        .msg-wrapper.other { align-self: flex-start; background: rgba(0, 0, 0, 0.3); border-bottom-left-radius: 2px; }
 
         .user-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; font-size: 0.7rem; font-weight: bold; }
+        .actions { display: flex; gap: 6px; }
         
-        .delete-btn {
-            background: rgba(255, 77, 77, 0.2); 
-            border: none; 
-            color: #ff4d4d; 
-            font-size: 0.65rem; 
-            font-weight: bold;
-            width: 18px; 
-            height: 18px; 
-            border-radius: 50%; 
-            display: flex; 
-            align-items: center; 
-            justify-content: center;
-            cursor: pointer; 
-            margin-left: 12px;
-            transition: background 0.2s;
-            -webkit-tap-highlight-color: transparent;
+        .btn-small {
+            border: none; border-radius: 50%; width: 20px; height: 20px; display: flex; align-items: center; justify-content: center;
+            cursor: pointer; font-size: 0.7rem; font-weight: bold; -webkit-tap-highlight-color: transparent;
         }
-
-        .delete-btn:active { background: rgba(255, 77, 77, 0.5); }
+        .delete-btn { background: rgba(255, 77, 77, 0.2); color: #ff4d4d; }
+        .edit-btn { background: rgba(255, 255, 255, 0.2); color: #ffffff; }
 
         .bubble { font-size: 0.9rem; line-height: 1.3; white-space: pre-wrap; word-break: break-word; color: #ffffff; }
+        .edit-input { width: 100%; background: rgba(0,0,0,0.3); border: 1px solid #fff; color: #fff; padding: 4px; border-radius: 4px; }
 
         #in { padding: 12px; display: flex; gap: 8px; align-items: center; background: rgba(0, 0, 0, 0.2); }
-        
-        .input-container {
-            position: relative; flex-grow: 1; display: flex; align-items: center;
-            background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 20px;
-        }
-        
-        input {
-            background: transparent; border: none; color: white; padding: 10px 16px; outline: none; font-size: 0.9rem; width: 100%;
-        }
+        .input-container { position: relative; flex-grow: 1; display: flex; align-items: center; background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 20px; }
+        input { background: transparent; border: none; color: white; padding: 10px 16px; outline: none; font-size: 0.9rem; width: 100%; }
         #u { width: 70px; text-align: center; font-weight: bold; }
-
         button.send-btn { background: transparent; border: none; padding: 5px; cursor: pointer; -webkit-tap-highlight-color: transparent; }
         button.send-btn svg { fill: #ffffff; width: 20px; height: 20px; }
-
-        #msg::-webkit-scrollbar { width: 3px; }
-        #msg::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.2); border-radius: 3px; }
     </style>
 </head>
 <body>
@@ -114,9 +70,7 @@
         <div class="input-container">
             <input type="text" id="m" placeholder="Message..." autocomplete="off">
         </div>
-        <button class="send-btn" id="sendBtn">
-            <svg viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
-        </button>
+        <button class="send-btn" id="sendBtn"><svg viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg></button>
     </div>
 </div>
 
@@ -136,7 +90,6 @@
         renderBubble(id, u, m, u);
         if (syncChannel) syncChannel.postMessage({ action: 'send', id, user: u, text: m });
         mInput.value = "";
-        mInput.focus();
     }
 
     sendBtn.addEventListener('pointerdown', (e) => { e.preventDefault(); s(); });
@@ -147,24 +100,52 @@
         const wrapper = document.createElement("div");
         wrapper.className = `msg-wrapper ${isSelf ? 'self' : 'other'}`;
         wrapper.id = `msg-${id}`;
+        
+        // Show buttons only if it's your own message
+        const actionsHtml = isSelf ? `
+            <div class="actions">
+                <button class="btn-small edit-btn" onclick="editBubble('${id}')">✎</button>
+                <button class="btn-small delete-btn" onclick="removeBubble('${id}')">×</button>
+            </div>
+        ` : '';
+
         wrapper.innerHTML = `
-            <div class="user-header"><span>${escapeHtml(user)}</span><button class="delete-btn" onclick="removeBubble('${id}')">×</button></div>
+            <div class="user-header">
+                <span>${escapeHtml(user)}</span>
+                ${actionsHtml}
+            </div>
             <div class="bubble">${escapeHtml(text)}</div>
         `;
         msgContainer.appendChild(wrapper);
         msgContainer.scrollTop = msgContainer.scrollHeight;
     }
 
+    function editBubble(id) {
+        const bubbleEl = document.querySelector(`#msg-${id} .bubble`);
+        const currentText = bubbleEl.innerText;
+        bubbleEl.innerHTML = `<input type="text" class="edit-input" value="${escapeHtml(currentText)}" onkeydown="if(event.key==='Enter') saveEdit('${id}', this.value)">`;
+        bubbleEl.querySelector('input').focus();
+    }
+
+    function saveEdit(id, newText) {
+        if(!newText.trim()) return;
+        document.querySelector(`#msg-${id} .bubble`).innerText = newText;
+        if (syncChannel) syncChannel.postMessage({ action: 'edit', id, text: newText });
+    }
+
     if (syncChannel) {
         syncChannel.onmessage = (e) => {
             if (e.data.action === 'send') renderBubble(e.data.id, e.data.user, e.data.text, uInput.value.trim());
-            else if (e.data.action === 'delete') { const el = document.getElementById(`msg-${e.data.id}`); if (el) el.remove(); }
+            else if (e.data.action === 'delete') document.getElementById(`msg-${e.data.id}`)?.remove();
+            else if (e.data.action === 'edit') {
+                const el = document.querySelector(`#msg-${e.data.id} .bubble`);
+                if(el) el.innerText = e.data.text;
+            }
         };
     }
 
     function removeBubble(id) {
-        const el = document.getElementById(`msg-${id}`);
-        if (el) el.remove();
+        document.getElementById(`msg-${id}`)?.remove();
         if (syncChannel) syncChannel.postMessage({ action: 'delete', id });
     }
 
