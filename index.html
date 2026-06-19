@@ -16,18 +16,23 @@
         
         body { 
             font-family: 'Segoe UI', Roboto, Helvetica, sans-serif; 
-            /* Anchored to the bottom center so the boat remains beautifully visible */
-            background: #0d0e15 url('background.jpg') no-repeat center bottom fixed;
-            background-size: cover;
+            /* Solid color matching your image shadows + contains it perfectly on desktop */
+            background: #04080e url('background.jpg') no-repeat center center fixed;
+            background-size: contain;
             
-            /* High-Fidelity Rendering Engines */
+            /* High-Fidelity Rendering Filters to prevent pixel blurring */
             image-rendering: -webkit-optimize-contrast;
             image-rendering: crisp-edges;
-            image-rendering: pixelated;
-            transform: translate3d(0, 0, 0); /* Forces hardware acceleration for crispness */
             
             color: var(--text-light);
             display: flex; justify-content: center; align-items: center; height: 100vh; padding: 12px;
+        }
+
+        /* If user is viewing on a mobile device, use cover instead so it fills the screen perfectly */
+        @media (max-width: 768px) {
+            body {
+                background-size: cover;
+            }
         }
 
         #box {
@@ -153,4 +158,35 @@
             </div>
             <div class="bubble">${escapeHtml(text)}</div>
         `;
-        msgContainer.appendChild(wrapper
+        msgContainer.appendChild(wrapper);
+        msgContainer.scrollTop = msgContainer.scrollHeight;
+    }
+
+    if (syncChannel) {
+        syncChannel.onmessage = (e) => {
+            const packet = e.data;
+            if (packet.action === 'send') { renderBubble(packet.id, packet.user, packet.text, uInput.value.trim()); }
+            else if (packet.action === 'delete') { const el = document.getElementById(`msg-${packet.id}`); if (el) el.remove(); }
+        };
+    }
+
+    function s() {
+        const u = uInput.value.trim() || "Guest";
+        const m = mInput.value.trim();
+        if(!m) return;
+        const uniqueId = Date.now() + Math.random().toString(36).substr(2, 5);
+        renderBubble(uniqueId, u, m, u);
+        if (syncChannel) { syncChannel.postMessage({ action: 'send', id: uniqueId, user: u, text: m }); }
+        mInput.value = "";
+    }
+
+    function removeBubble(id) {
+        const el = document.getElementById(`msg-${id}`);
+        if (el) el.remove();
+        if (syncChannel) { syncChannel.postMessage({ action: 'delete', id: id }); }
+    }
+
+    function escapeHtml(str) { return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"); }
+</script>
+</body>
+</html>
