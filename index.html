@@ -7,46 +7,39 @@
     <style>
         :root {
             --text-light: #e2e8f0;
-            --glass-bg: rgba(15, 23, 42, 0.35);
-            --glass-border: rgba(255, 255, 255, 0.45);
-            --glow-color: rgba(255, 255, 255, 0.25);
+            /* Reduced alpha for more clarity */
+            --glass-bg: rgba(15, 23, 42, 0.25); 
+            --glass-border: rgba(255, 255, 255, 0.5);
+            --glow-color: rgba(255, 255, 255, 0.15);
         }
 
         * { box-sizing: border-box; margin: 0; padding: 0; }
         
         body { 
             font-family: 'Segoe UI', Roboto, Helvetica, sans-serif; 
-            /* Solid color matching your image shadows + contains it perfectly on desktop */
             background: #04080e url('background.jpg') no-repeat center center fixed;
             background-size: contain;
-            
-            /* High-Fidelity Rendering Filters to prevent pixel blurring */
             image-rendering: -webkit-optimize-contrast;
             image-rendering: crisp-edges;
-            
             color: var(--text-light);
             display: flex; justify-content: center; align-items: center; height: 100vh; padding: 12px;
         }
 
-        /* If user is viewing on a mobile device, use cover instead so it fills the screen perfectly */
-        @media (max-width: 768px) {
-            body {
-                background-size: cover;
-            }
-        }
+        @media (max-width: 768px) { body { background-size: cover; } }
 
         #box {
             width: 100%; max-width: 440px; height: 85vh; 
             background: var(--glass-bg);
-            backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+            /* Reduced blur from 12px to 4px for sharper visual clarity */
+            backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px);
             border-radius: 24px; display: flex; flex-direction: column; overflow: hidden;
-            border: 2px solid var(--glass-border); 
-            box-shadow: 0 0 25px var(--glow-color), inset 0 0 15px rgba(255, 255, 255, 0.05);
+            border: 1.5px solid var(--glass-border); 
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
         }
 
         .chat-header {
             padding: 20px 24px 10px 24px; display: flex; justify-content: space-between; align-items: center;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
         }
         .chat-header h3 { font-size: 1.25rem; font-weight: 600; color: #ffffff; letter-spacing: -0.3px; }
 
@@ -56,15 +49,15 @@
         
         .msg-wrapper.self { 
             align-self: flex-end; 
-            background: rgba(255, 255, 255, 0.08); 
-            border: 1px solid rgba(255, 255, 255, 0.15);
+            background: rgba(255, 255, 255, 0.06); 
+            border: 1px solid rgba(255, 255, 255, 0.1);
             border-bottom-right-radius: 4px; 
         }
         
         .msg-wrapper.other { 
             align-self: flex-start; 
-            background: rgba(0, 0, 0, 0.25); 
-            border: 1px solid rgba(255, 255, 255, 0.08);
+            background: rgba(0, 0, 0, 0.15); 
+            border: 1px solid rgba(255, 255, 255, 0.05);
             border-bottom-left-radius: 4px; 
         }
 
@@ -74,13 +67,13 @@
         .delete-btn {
             background: transparent; border: none; color: #ff6b6b; font-size: 0.75rem; cursor: pointer; opacity: 0.5; transition: opacity 0.2s;
         }
-        .delete-btn:hover { opacity: 1; text-shadow: 0 0 4px #ff6b6b; }
+        .delete-btn:hover { opacity: 1; }
 
-        #in { padding: 16px 20px 20px 20px; display: flex; gap: 10px; align-items: center; background: rgba(0, 0, 0, 0.15); }
+        #in { padding: 16px 20px 20px 20px; display: flex; gap: 10px; align-items: center; background: rgba(0, 0, 0, 0.1); }
         
         .input-container {
             position: relative; flex-grow: 1; display: flex; align-items: center;
-            background: rgba(255, 255, 255, 0.08); border: 1px solid rgba(255, 255, 255, 0.2); border-radius: 24px;
+            background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 24px;
         }
         
         input {
@@ -89,18 +82,16 @@
         #u { width: 80px; text-align: center; font-weight: bold; padding-right: 8px; }
 
         .attachment-icon {
-            position: absolute; right: 16px; color: rgba(255, 255, 255, 0.4); font-size: 1rem; pointer-events: none;
+            position: absolute; right: 16px; color: rgba(255, 255, 255, 0.3); font-size: 1rem; pointer-events: none;
         }
 
         button.send-btn {
-            background: transparent; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; padding: 6px; transition: transform 0.1s;
+            background: transparent; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; padding: 6px;
         }
-        button.send-btn:active { transform: scale(0.9); }
-        button.send-btn svg { fill: rgba(255, 255, 255, 0.75); width: 22px; height: 22px; transition: fill 0.2s; }
-        button.send-btn:hover svg { fill: #ffffff; filter: drop-shadow(0 0 4px rgba(255,255,255,0.4)); }
+        button.send-btn svg { fill: rgba(255, 255, 255, 0.6); width: 22px; height: 22px; }
 
         #msg::-webkit-scrollbar { width: 4px; }
-        #msg::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.15); border-radius: 4px; }
+        #msg::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.1); border-radius: 4px; }
     </style>
 </head>
 <body>
