@@ -16,7 +16,8 @@
         
         body { 
             font-family: 'Segoe UI', Roboto, Helvetica, sans-serif; 
-            background: url('https://storage.googleapis.com/baking-backend-media-production/661858c4-a2df-422a-8d76-f80e81dbaf27.png') no-repeat center center fixed;
+            background: #0d0e15 url('https://raw.githubusercontent.com/JustArch1t/chat-app/main/background.jpg') no-repeat center center fixed;
+            background-image: url('https://images.unsplash.com/photo-1506318137071-a8e063b4bec0?q=80&w=1920');
             background-size: cover;
             color: var(--text-light);
             display: flex; justify-content: center; align-items: center; height: 100vh; padding: 12px;
@@ -107,101 +108,3 @@
             <input type="text" id="m" placeholder="Type a message..." autocomplete="off">
             <span class="attachment-icon">📎</span>
         </div>
-        <button class="send-btn" onclick="s()">
-            <svg viewBox="0 0 24 24">
-                <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/>
-            </svg>
-        </button>
-    </div>
-</div>
-
-<script>
-    let syncChannel;
-    try {
-        syncChannel = new BroadcastChannel('vercel_neon_group_chat');
-    } catch(e) {
-        console.log("Cross-tab bridge running.");
-    }
-    
-    const msgContainer = document.getElementById("msg");
-    const mInput = document.getElementById("m");
-    const uInput = document.getElementById("u");
-
-    mInput.addEventListener("keydown", (e) => {
-        if (e.key === "Enter" && !e.shiftKey) {
-            e.preventDefault(); 
-            s();
-        }
-    });
-
-    function getUserColor(username) {
-        const structuralColors = ['#dfb3ff', '#ffd485', '#bbf7d0', '#fed7aa', '#93c5fd', '#fda4af'];
-        let hash = 0;
-        for (let i = 0; i < username.length; i++) {
-            hash = username.charCodeAt(i) + ((hash << 5) - hash);
-        }
-        const index = Math.abs(hash) % structuralColors.length;
-        return structuralColors[index];
-    }
-
-    function renderBubble(id, user, text, referenceUser) {
-        const isSelf = (user === referenceUser);
-        const nameColor = getUserColor(user);
-
-        const wrapper = document.createElement("div");
-        wrapper.className = `msg-wrapper ${isSelf ? 'self' : 'other'}`;
-        wrapper.id = `msg-${id}`;
-
-        wrapper.innerHTML = `
-            <div class="user-header">
-                <span style="color: ${nameColor}">${escapeHtml(user)}</span>
-                <button class="delete-btn" onclick="removeBubble('${id}')">Delete</button>
-            </div>
-            <div class="bubble">${escapeHtml(text)}</div>
-        `;
-
-        msgContainer.appendChild(wrapper);
-        msgContainer.scrollTop = msgContainer.scrollHeight;
-    }
-
-    if (syncChannel) {
-        syncChannel.onmessage = (e) => {
-            const packet = e.data;
-            if (packet.action === 'send') {
-                renderBubble(packet.id, packet.user, packet.text, uInput.value.trim());
-            } else if (packet.action === 'delete') {
-                const el = document.getElementById(`msg-${packet.id}`);
-                if (el) el.remove();
-            }
-        };
-    }
-
-    function s() {
-        const u = uInput.value.trim() || "Guest";
-        const m = mInput.value.trim();
-        if(!m) return;
-
-        const uniqueId = Date.now() + Math.random().toString(36).substr(2, 5);
-        renderBubble(uniqueId, u, m, u);
-        
-        if (syncChannel) {
-            syncChannel.postMessage({ action: 'send', id: uniqueId, user: u, text: m });
-        }
-        mInput.value = "";
-    }
-
-    function removeBubble(id) {
-        const el = document.getElementById(`msg-${id}`);
-        if (el) el.remove();
-        
-        if (syncChannel) {
-            syncChannel.postMessage({ action: 'delete', id: id });
-        }
-    }
-
-    function escapeHtml(str) {
-        return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-    }
-</script>
-</body>
-</html>
