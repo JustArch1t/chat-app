@@ -1,34 +1,165 @@
-<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Group-Chat</title>
+    <style>
+        :root {
+            --text-light: #e2e8f0;
+            --glass-bg: rgba(255, 255, 255, 0.08); 
+            --glass-border: rgba(255, 255, 255, 0.2);
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        
+        body { 
+            font-family: 'Segoe UI', Roboto, Helvetica, sans-serif; 
+            background: #04080e url('background.jpg') no-repeat center center fixed;
+            background-size: cover;
+            color: var(--text-light);
+            display: flex; justify-content: center; align-items: center; height: 100dvh; width: 100vw;
+            overflow: hidden; margin: 0; padding: 0; position: fixed; top: 0; left: 0;
+        }
+
+        #box {
+            width: 95vw; max-width: 380px; height: 80vh; 
+            background: var(--glass-bg);
+            backdrop-filter: blur(0.5px); -webkit-backdrop-filter: blur(0.5px);
+            border-radius: 20px; display: flex; flex-direction: column; overflow: hidden; 
+            border: 1px solid var(--glass-border); box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+        }
+
+        .chat-header { padding: 16px 20px; border-bottom: 1px solid rgba(255, 255, 255, 0.1); }
+        .chat-header h3 { font-size: 1.1rem; font-weight: 600; color: #ffffff; }
+
+        #msg { flex-grow: 1; overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 12px; -webkit-overflow-scrolling: touch; }
+
+        .msg-wrapper { display: flex; flex-direction: column; max-width: 85%; padding: 8px 12px; border-radius: 12px; }
+        .msg-wrapper.self { align-self: flex-end; background: rgba(255, 255, 255, 0.15); border-bottom-right-radius: 2px; }
+        .msg-wrapper.other { align-self: flex-start; background: rgba(0, 0, 0, 0.3); border-bottom-left-radius: 2px; }
+
+        .user-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; font-size: 0.75rem; font-weight: bold; min-height: 24px; }
+        .actions { display: flex; gap: 8px; margin-left: 20px; flex-shrink: 0; }
+        
+        .btn-small { border: none; border-radius: 50%; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 0.85rem; font-weight: bold; -webkit-tap-highlight-color: transparent; }
+        .delete-btn { background: rgba(255, 77, 77, 0.25); color: #ff4d4d; }
+        .edit-btn { background: rgba(255, 255, 255, 0.25); color: #ffffff; }
+
+        .bubble { font-size: 0.9rem; line-height: 1.3; white-space: pre-wrap; word-break: break-word; color: #ffffff; }
+        .edit-input { width: 100%; background: rgba(0,0,0,0.4); border: 1px solid #fff; color: #fff; padding: 6px; border-radius: 6px; outline: none; }
+
+        #in { padding: 12px; background: rgba(0, 0, 0, 0.2); }
+        .input-row { display: flex; gap: 8px; align-items: center; }
+        .input-container { position: relative; flex-grow: 1; display: flex; align-items: center; background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 20px; }
+        input { background: transparent; border: none; color: white; padding: 10px 16px; outline: none; font-size: 0.9rem; width: 100%; }
+        #u { width: 70px; text-align: center; font-weight: bold; background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 20px; }
+        
+        button.send-btn { background: transparent; border: none; padding: 5px; cursor: pointer; }
+        button.emoji-btn { background: transparent; border: none; cursor: pointer; font-size: 1.2rem; }
+        
+        #emoji-picker { display: none; grid-template-columns: repeat(6, 1fr); gap: 5px; padding: 8px; background: rgba(0,0,0,0.3); border-top: 1px solid rgba(255,255,255,0.1); }
+        .emoji-item { cursor: pointer; text-align: center; font-size: 1.2rem; padding: 4px; }
+    </style>
+</head>
+<body>
+
+<div id="box">
+    <div class="chat-header"><h3>Group-Chat</h3></div>
+    <div id="msg"></div>
+    <div id="emoji-picker"></div>
+    <div id="in">
+        <div class="input-row">
+            <input type="text" id="u" placeholder="Name" value="User1" maxlength="10">
+            <button class="emoji-btn" onclick="togglePicker()">😊</button>
+            <div class="input-container">
+                <input type="text" id="m" placeholder="Message..." autocomplete="off">
+            </div>
+            <button class="send-btn" id="sendBtn"><svg viewBox="0 0 24 24" width="20" height="20" fill="#ffffff"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg></button>
+        </div>
+    </div>
+</div>
 
 <script>
-    // Your config
-    const firebaseConfig = {
-        apiKey: "AIzaSyBXjcr21ZUrF5ty2JKH4BuaLqjHaqHitD8",
-        authDomain: "chat-room-e8152.firebaseapp.com",
-        projectId: "chat-room-e8152",
-        storageBucket: "chat-room-e8152.firebasestorage.app",
-        messagingSenderId: "875122406489",
-        appId: "1:875122406489:web:c0f66c7a7903b9e87eed48",
-        measurementId: "G-3CG2NMQEPN"
-    };
+    const picker = document.getElementById('emoji-picker');
+    const emojis = ['😀', '😂', '😍', '😭', '💀', '👍', '🔥', '❤️', '😢', '😎', '😅', '🤣', '😇', '🙃', '🥰', '🤩', '🤪', '👊', '🤟', '👌'];
+    
+    emojis.forEach(e => {
+        const span = document.createElement('span');
+        span.className = 'emoji-item';
+        span.innerText = e;
+        span.onclick = () => { document.getElementById('m').value += e; document.getElementById('m').focus(); };
+        picker.appendChild(span);
+    });
 
-    // Initialize
-    firebase.initializeApp(firebaseConfig);
-    const db = firebase.database().ref('messages');
+    function togglePicker() { picker.style.display = (picker.style.display === 'grid') ? 'none' : 'grid'; }
 
-    // Your SEND function
+    let syncChannel;
+    try { syncChannel = new BroadcastChannel('vercel_neon_group_chat'); } catch(e) {}
+    
+    const msgContainer = document.getElementById("msg");
+    const mInput = document.getElementById("m");
+    const uInput = document.getElementById("u");
+    const sendBtn = document.getElementById("sendBtn");
+
     function sendMessage() {
-        const u = document.getElementById("u").value || "Guest";
-        const m = document.getElementById("m").value;
+        const u = uInput.value.trim() || "Guest", m = mInput.value.trim();
         if(!m) return;
-        db.push({ user: u, text: m, timestamp: Date.now() });
-        document.getElementById("m").value = "";
+        const id = Date.now() + Math.random().toString(36).substr(2, 5);
+        renderBubble(id, u, m, u);
+        if (syncChannel) syncChannel.postMessage({ action: 'send', id, user: u, text: m });
+        mInput.value = "";
     }
 
-    // Your RECEIVE function
-    db.on('child_added', (snapshot) => {
-        const data = snapshot.val();
-        renderBubble(snapshot.key, data.user, data.text);
-    });
+    sendBtn.addEventListener('click', sendMessage);
+    mInput.addEventListener("keydown", (e) => { if (e.key === "Enter") sendMessage(); });
+
+    function renderBubble(id, user, text, referenceUser) {
+        const isSelf = (user === referenceUser);
+        const wrapper = document.createElement("div");
+        wrapper.className = `msg-wrapper ${isSelf ? 'self' : 'other'}`;
+        wrapper.id = `msg-${id}`;
+        wrapper.innerHTML = `
+            <div class="user-header">
+                <span>${escapeHtml(user)}</span>
+                ${isSelf ? `<div class="actions"><button class="btn-small edit-btn" onclick="editBubble('${id}')">✎</button><button class="btn-small delete-btn" onclick="removeBubble('${id}')">×</button></div>` : ''}
+            </div>
+            <div class="bubble">${escapeHtml(text)}</div>
+        `;
+        msgContainer.appendChild(wrapper);
+        msgContainer.scrollTop = msgContainer.scrollHeight;
+    }
+
+    function editBubble(id) {
+        const bubbleEl = document.querySelector(`#msg-${id} .bubble`);
+        bubbleEl.innerHTML = `<input type="text" class="edit-input" value="${escapeHtml(bubbleEl.innerText)}" onkeydown="if(event.key==='Enter') saveEdit('${id}', this.value)">`;
+        bubbleEl.querySelector('input').focus();
+    }
+
+    function saveEdit(id, newText) {
+        const trimmed = newText.trim();
+        const bubbleEl = document.querySelector(`#msg-${id} .bubble`);
+        bubbleEl.innerText = trimmed || " ";
+        if (syncChannel) syncChannel.postMessage({ action: 'edit', id, text: trimmed });
+    }
+
+    if (syncChannel) {
+        syncChannel.onmessage = (e) => {
+            if (e.data.action === 'send') renderBubble(e.data.id, e.data.user, e.data.text, uInput.value.trim());
+            else if (e.data.action === 'delete') document.getElementById(`msg-${e.data.id}`)?.remove();
+            else if (e.data.action === 'edit') {
+                const el = document.querySelector(`#msg-${e.data.id} .bubble`);
+                if(el) el.innerText = e.data.text;
+            }
+        };
+    }
+
+    function removeBubble(id) {
+        document.getElementById(`msg-${id}`)?.remove();
+        if (syncChannel) syncChannel.postMessage({ action: 'delete', id });
+    }
+
+    function escapeHtml(str) { return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"); }
 </script>
+</body>
+</html>
