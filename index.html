@@ -11,31 +11,29 @@
         * { box-sizing: border-box; touch-action: manipulation; }
         body { font-family: sans-serif; background: #04080e url('background.jpg') no-repeat center center fixed; background-size: cover; margin: 0; display: flex; justify-content: center; align-items: center; height: 100dvh; overflow: hidden; }
         
-        /* Shrunk chatbox for better mobile scaling */
-        #box { width: 92vw; max-width: 400px; height: 85dvh; background: rgba(255, 255, 255, 0.03); backdrop-filter: blur(15px); padding: 12px; border-radius: 20px; border: 1px solid rgba(255, 255, 255, 0.1); display: flex; flex-direction: column; }
+        /* Reduced blur to make it clearer */
+        #box { width: 95vw; max-width: 400px; height: 85dvh; background: rgba(0, 0, 0, 0.4); backdrop-filter: blur(5px); padding: 12px; border-radius: 20px; border: 1px solid rgba(255, 255, 255, 0.1); display: flex; flex-direction: column; }
         #msg { flex-grow: 1; overflow-y: auto; padding: 10px; display: flex; flex-direction: column; gap: 12px; }
         
-        .msg-container { display: flex; width: 100%; align-items: flex-end; }
+        .msg-container { display: flex; width: 100%; align-items: center; }
         .mine { justify-content: flex-end; }
         .theirs { justify-content: flex-start; }
-        .bubble { padding: 10px 15px; border-radius: 18px; max-width: 75%; font-size: 1rem; position: relative; }
-        .mine .bubble { background: #007bff; color: white; border-bottom-right-radius: 4px; }
-        .theirs .bubble { background: #333; color: white; border-bottom-left-radius: 4px; }
+        .bubble { padding: 10px 15px; border-radius: 18px; max-width: 75%; font-size: 1rem; background: #333; color: white; position: relative; }
+        .mine .bubble { background: #007bff; }
         
-        #emoji-picker { display: none; grid-template-columns: repeat(6, 1fr); gap: 5px; margin-bottom: 5px; background: rgba(0,0,0,0.3); padding: 5px; border-radius: 10px; }
-        #in { display: flex; gap: 5px; align-items: center; width: 100%; margin-top: 5px; }
-        input { background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: white; padding: 10px; border-radius: 15px; flex-grow: 1; }
-        .action-btn { background: none; border: none; cursor: pointer; padding: 5px; font-size: 1.2rem; color: white; }
+        /* Force buttons to stay inside the input row */
+        #in { display: flex; gap: 5px; align-items: center; width: 100%; flex-shrink: 0; }
+        input { background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: white; padding: 10px; border-radius: 15px; flex-grow: 1; min-width: 0; }
+        .action-btn { background: none; border: none; cursor: pointer; padding: 8px; font-size: 1.2rem; color: white; flex-shrink: 0; }
     </style>
 </head>
 <body>
 
 <div id="box">
     <div id="msg"></div>
-    <div id="emoji-picker"></div>
     <div id="in">
         <input type="text" id="u" style="width: 50px; flex-grow: 0;">
-        <button class="action-btn" onclick="toggleEmoji()">😊</button>
+        <button class="action-btn" onclick="document.getElementById('m').value += '😊'">😊</button>
         <input type="text" id="m" placeholder="Msg...">
         <button id="sendBtn" class="action-btn">➤</button>
     </div>
@@ -48,37 +46,21 @@
     const myId = "User-" + Math.floor(Math.random() * 1000);
     document.getElementById("u").value = myId;
 
-    function toggleEmoji() { const p = document.getElementById("emoji-picker"); p.style.display = (p.style.display === 'grid' ? 'none' : 'grid'); }
     function send() { const t = document.getElementById("m").value.trim(); if(t) { db.push({ user: myId, text: t }); document.getElementById("m").value = ""; } }
-    
     document.getElementById("sendBtn").onclick = send;
-    document.getElementById("m").onkeypress = (e) => { if(e.key === 'Enter') send(); };
 
     db.on('child_added', (s) => {
         const d = s.val();
         const div = document.createElement("div");
         div.className = `msg-container ${d.user === myId ? 'mine' : 'theirs'}`;
-        div.innerHTML = `<div class="bubble">${d.text} ${d.user === myId ? '<small onclick="editMsg(\''+s.key+'\',\''+d.text+'\')" style="cursor:pointer; margin-left:8px; opacity:0.6;">✎</small>' : ''}</div>`;
+        div.innerHTML = `<div class="bubble">${d.text} ${d.user === myId ? 
+            '<span onclick="editMsg(\''+s.key+'\',\''+d.text+'\')" style="margin-left:10px;">✎</span>' +
+            '<span onclick="db.child(\''+s.key+'\').remove()" style="margin-left:10px; color:#ff4d4d;">✖</span>' 
+            : ''}</div>`;
         document.getElementById("msg").appendChild(div);
         document.getElementById("msg").scrollTop = document.getElementById("msg").scrollHeight;
     });
 
-    function editMsg(key, oldText) {
-        const bubble = event.target.parentElement;
-        bubble.innerHTML = `<input type="text" value="${oldText}" id="edit-in" style="width:100%;">`;
-        const input = document.getElementById("edit-in");
-        input.focus();
-        input.onkeypress = (e) => { if(e.key === 'Enter') db.child(key).update({ text: input.value }); };
-        input.onblur = () => db.child(key).update({ text: input.value });
-    }
-
-    db.on('child_changed', (s) => location.reload()); // Refresh to update edited UI
-
-    ['😀', '😂', '😍', '😭', '💀', '👍'].forEach(e => {
-        const s = document.createElement('span'); s.className = 'emoji-item'; s.innerText = e;
-        s.onclick = () => document.getElementById("m").value += e;
-        document.getElementById('emoji-picker').appendChild(s);
-    });
-</script>
-</body>
-</html>
+    function editMsg(key, old) {
+        const val = prompt("Edit:", old);
+        if
