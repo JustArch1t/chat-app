@@ -6,29 +6,38 @@
     <title>Chat App</title>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+    <style>
+        body { background: #111; color: #fff; font-family: sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+        #status { padding: 20px; border: 1px solid #444; border-radius: 10px; }
+    </style>
 </head>
 <body>
-    <div id="app">Loading...</div>
+    <div id="status">Connecting to Chat...</div>
 
     <script>
-        // ADD THIS TO DEBUG
-        window.onerror = function(msg, url, line) {
-            document.getElementById('app').innerHTML = 'Error: ' + msg + ' on line ' + line;
-            return false;
-        };
-
-        const firebaseConfig = {
-            apiKey: "AIzaSyBXjcr21ZUrF5ty2JKH4BuaLqjHaqHitD8",
-            authDomain: "chat-room-e8152.firebaseapp.com",
-            databaseURL: "https://chat-room-e8152-default-rtdb.asia-southeast1.firebasedatabase.app",
-            projectId: "chat-room-e8152",
-            storageBucket: "chat-room-e8152.appspot.com",
-            messagingSenderId: "875122406489",
-            appId: "1:875122406489:web:c0f66c7a7903b9e87eed48"
-        };
-        
-        firebase.initializeApp(firebaseConfig);
-        document.getElementById('app').innerHTML = "Firebase Initialized. Check Console if blank.";
+        try {
+            const firebaseConfig = {
+                apiKey: "AIzaSyBXjcr21ZUrF5ty2JKH4BuaLqjHaqHitD8",
+                authDomain: "chat-room-e8152.firebaseapp.com",
+                databaseURL: "https://chat-room-e8152-default-rtdb.asia-southeast1.firebasedatabase.app",
+                projectId: "chat-room-e8152",
+                storageBucket: "chat-room-e8152.appspot.com",
+                messagingSenderId: "875122406489",
+                appId: "1:875122406489:web:c0f66c7a7903b9e87eed48"
+            };
+            
+            firebase.initializeApp(firebaseConfig);
+            document.getElementById('status').innerText = "Connected! Setting up database...";
+            
+            // Test connection
+            const db = firebase.database().ref('test');
+            db.set({ status: "active" }).then(() => {
+                document.getElementById('status').innerText = "Database Online! You are ready to chat.";
+                setTimeout(() => window.location.reload(), 1000); // Reload to load the full chat UI
+            });
+        } catch (e) {
+            document.getElementById('status').innerText = "Setup Error: " + e.message;
+        }
     </script>
 </body>
 </html>
