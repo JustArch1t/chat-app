@@ -9,9 +9,19 @@
     
     <style>
         * { box-sizing: border-box; touch-action: manipulation; }
-        body { font-family: sans-serif; background: #04080e; margin: 0; display: flex; justify-content: center; align-items: center; height: 100dvh; overflow: hidden; }
+        /* Professional Dark Gradient Background */
+        body { 
+            font-family: sans-serif; 
+            background: linear-gradient(135deg, #0f0c29, #302b63, #24243e); 
+            margin: 0; 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            height: 100dvh; 
+            overflow: hidden; 
+        }
         
-        #box { width: 90vw; max-width: 400px; height: 85dvh; background: rgba(0, 0, 0, 0.5); backdrop-filter: blur(5px); padding: 12px; border-radius: 20px; border: 1px solid rgba(255, 255, 255, 0.1); display: flex; flex-direction: column; }
+        #box { width: 90vw; max-width: 400px; height: 85dvh; background: rgba(0, 0, 0, 0.4); backdrop-filter: blur(10px); padding: 12px; border-radius: 20px; border: 1px solid rgba(255, 255, 255, 0.1); display: flex; flex-direction: column; }
         #msg { flex-grow: 1; overflow-y: auto; padding: 10px; display: flex; flex-direction: column; gap: 10px; }
         
         .msg-container { display: flex; width: 100%; align-items: flex-end; }
@@ -39,59 +49,3 @@
         <div id="emojiPopup">
             <span>😀</span><span>😂</span><span>🤣</span><span>😊</span><span>💀</span>
             <span>😍</span><span>😎</span><span>🤔</span><span>😴</span><span>😭</span>
-            <span>😡</span><span>👍</span><span>👎</span><span>🔥</span><span>❤️</span>
-            <span>✨</span><span>🎉</span><span>🚀</span><span>💯</span><span>🐱</span>
-            <span>🐶</span><span>⚽</span><span>💡</span><span>🍔</span><span>🎮</span>
-        </div>
-
-        <input type="text" id="m" placeholder="Msg...">
-        <button id="sendBtn" class="action-btn">➤</button>
-    </div>
-</div>
-
-<script>
-    const firebaseConfig = { apiKey: "AIzaSyBXjcr21ZUrF5ty2JKH4BuaLqjHaqHitD8", databaseURL: "https://chat-room-e8152-default-rtdb.asia-southeast1.firebasedatabase.app", projectId: "chat-room-e8152" };
-    firebase.initializeApp(firebaseConfig);
-    const db = firebase.database().ref('messages');
-    const myId = "User-" + Math.floor(Math.random() * 1000);
-    document.getElementById("u").value = myId;
-
-    // UI Logic
-    const emojiBtn = document.getElementById("emojiBtn");
-    const emojiPopup = document.getElementById("emojiPopup");
-    emojiBtn.onclick = (e) => { e.stopPropagation(); emojiPopup.style.display = (emojiPopup.style.display === "grid") ? "none" : "grid"; };
-    document.addEventListener("click", () => emojiPopup.style.display = "none");
-    emojiPopup.onclick = (e) => { if(e.target.tagName === 'SPAN') { document.getElementById('m').value += e.target.innerText; document.getElementById('m').focus(); } };
-
-    // Chat Logic
-    function sendMessage() {
-        const m = document.getElementById("m");
-        if(m.value.trim() !== "") { db.push({ user: myId, text: m.value.trim() }); m.value = ""; }
-    }
-    document.getElementById("sendBtn").onclick = sendMessage;
-    document.getElementById("m").onkeypress = (e) => { if(e.key === "Enter") sendMessage(); };
-
-    db.on('child_added', (s) => {
-        const d = s.val();
-        const div = document.createElement("div");
-        div.id = s.key;
-        div.className = `msg-container ${d.user === myId ? 'mine' : 'theirs'}`;
-        div.innerHTML = `<div class="bubble"><span class="txt">${d.text}</span> ${d.user === myId ? '<span style="margin-left:8px; cursor:pointer" onclick="edit(\''+s.key+'\')">✎</span><span style="margin-left:8px; cursor:pointer" onclick="db.child(\''+s.key+'\').remove()">✖</span>' : ''}</div>`;
-        document.getElementById("msg").appendChild(div);
-        document.getElementById("msg").scrollTop = document.getElementById("msg").scrollHeight;
-    });
-
-    window.edit = (key) => {
-        const bubble = document.getElementById(key).querySelector('.bubble');
-        const oldText = bubble.querySelector('.txt').innerText;
-        bubble.innerHTML = `<input type="text" value="${oldText}" id="edit-box" style="width:100%; border-radius:5px; padding:5px;">`;
-        const input = document.getElementById("edit-box");
-        input.focus();
-        input.onblur = () => db.child(key).update({ text: input.value });
-    };
-
-    db.on('child_changed', (s) => { document.getElementById(s.key).querySelector('.bubble').innerHTML = `<span class="txt">${s.val().text}</span> <span style="margin-left:8px; cursor:pointer" onclick="edit('${s.key}')">✎</span> <span style="margin-left:8px; cursor:pointer" onclick="db.child('${s.key}').remove()">✖</span>`; });
-    db.on('child_removed', (s) => document.getElementById(s.key)?.remove());
-</script>
-</body>
-</html>
