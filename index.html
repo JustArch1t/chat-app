@@ -1,30 +1,50 @@
 <!DOCTYPE html>
-<html>
-<body>
-    <input type="text" id="m" placeholder="Test Message">
-    <button id="sendBtn">Send</button>
-
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Group-Chat</title>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
-    
+</head>
+<body>
+
+    <input type="text" id="m" placeholder="Message...">
+    <button id="sendBtn">Send</button>
+
     <script>
-        const firebaseConfig = {
-            apiKey: "AIzaSyBXjcr21ZUrF5ty2JKH4BuaLqjHaqHitD8",
-            authDomain: "chat-room-e8152.firebaseapp.com",
-            databaseURL: "https://chat-room-e8152-default-rtdb.asia-southeast1.firebasedatabase.app",
-            projectId: "chat-room-e8152",
-            storageBucket: "chat-room-e8152.firebasestorage.app",
-            messagingSenderId: "875122406489",
-            appId: "1:875122406489:web:c0f66c7a7903b9e87eed48"
-        };
-        firebase.initializeApp(firebaseConfig);
-        
-        document.getElementById("sendBtn").onclick = () => {
-            console.log("Button clicked!");
-            firebase.database().ref('messages').push({ text: "Test success" })
-                .then(() => alert("Sent to Firebase!"))
-                .catch((err) => alert("Error: " + err.message));
-        };
+        try {
+            console.log("Script starting...");
+            
+            const firebaseConfig = {
+                apiKey: "AIzaSyBXjcr21ZUrF5ty2JKH4BuaLqjHaqHitD8",
+                authDomain: "chat-room-e8152.firebaseapp.com",
+                databaseURL: "https://chat-room-e8152-default-rtdb.asia-southeast1.firebasedatabase.app",
+                projectId: "chat-room-e8152",
+                storageBucket: "chat-room-e8152.firebasestorage.app",
+                messagingSenderId: "875122406489",
+                appId: "1:875122406489:web:c0f66c7a7903b9e87eed48"
+            };
+
+            firebase.initializeApp(firebaseConfig);
+            console.log("Firebase initialized");
+
+            const db = firebase.database().ref('messages');
+            const sendBtn = document.getElementById("sendBtn");
+            const msgInput = document.getElementById("m");
+
+            sendBtn.onclick = function() {
+                console.log("Button pressed");
+                const text = msgInput.value.trim();
+                if(text) {
+                    db.push({ user: "User", text: text, ts: Date.now() });
+                    msgInput.value = "";
+                    console.log("Message pushed");
+                }
+            };
+
+        } catch (e) {
+            console.error("CRITICAL ERROR:", e);
+        }
     </script>
 </body>
 </html>
