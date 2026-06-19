@@ -16,9 +16,16 @@
         
         body { 
             font-family: 'Segoe UI', Roboto, Helvetica, sans-serif; 
-            /* This safely grabs the exact image file from your repository */
-            background: url('background.jpg') no-repeat center center fixed;
+            /* Anchored to the bottom center so the boat remains beautifully visible */
+            background: #0d0e15 url('background.jpg') no-repeat center bottom fixed;
             background-size: cover;
+            
+            /* High-Fidelity Rendering Engines */
+            image-rendering: -webkit-optimize-contrast;
+            image-rendering: crisp-edges;
+            image-rendering: pixelated;
+            transform: translate3d(0, 0, 0); /* Forces hardware acceleration for crispness */
+            
             color: var(--text-light);
             display: flex; justify-content: center; align-items: center; height: 100vh; padding: 12px;
         }
@@ -44,15 +51,15 @@
         
         .msg-wrapper.self { 
             align-self: flex-end; 
-            background: rgba(112, 79, 140, 0.55); 
-            border: 1px solid rgba(180, 140, 210, 0.25);
+            background: rgba(255, 255, 255, 0.08); 
+            border: 1px solid rgba(255, 255, 255, 0.15);
             border-bottom-right-radius: 4px; 
         }
         
         .msg-wrapper.other { 
             align-self: flex-start; 
-            background: rgba(175, 130, 60, 0.55); 
-            border: 1px solid rgba(230, 180, 100, 0.25);
+            background: rgba(0, 0, 0, 0.25); 
+            border: 1px solid rgba(255, 255, 255, 0.08);
             border-bottom-left-radius: 4px; 
         }
 
@@ -97,9 +104,7 @@
     <div class="chat-header">
         <h3>Group-Chat</h3>
     </div>
-    
     <div id="msg"></div>
-    
     <div id="in">
         <div class="input-container" style="width: 80px; flex-grow: 0;">
             <input type="text" id="u" placeholder="Name" value="User1" maxlength="10">
@@ -118,41 +123,29 @@
 
 <script>
     let syncChannel;
-    try {
-        syncChannel = new BroadcastChannel('vercel_neon_group_chat');
-    } catch(e) {
-        console.log("Cross-tab bridge running.");
-    }
+    try { syncChannel = new BroadcastChannel('vercel_neon_group_chat'); } catch(e) {}
     
     const msgContainer = document.getElementById("msg");
     const mInput = document.getElementById("m");
     const uInput = document.getElementById("u");
 
     mInput.addEventListener("keydown", (e) => {
-        if (e.key === "Enter" && !e.shiftKey) {
-            e.preventDefault(); 
-            s();
-        }
+        if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); s(); }
     });
 
     function getUserColor(username) {
-        const structuralColors = ['#dfb3ff', '#ffd485', '#bbf7d0', '#fed7aa', '#93c5fd', '#fda4af'];
+        const structuralColors = ['#ffffff', '#e2e8f0', '#cbd5e1', '#94a3b8', '#f8fafc', '#f1f5f9'];
         let hash = 0;
-        for (let i = 0; i < username.length; i++) {
-            hash = username.charCodeAt(i) + ((hash << 5) - hash);
-        }
-        const index = Math.abs(hash) % structuralColors.length;
-        return structuralColors[index];
+        for (let i = 0; i < username.length; i++) { hash = username.charCodeAt(i) + ((hash << 5) - hash); }
+        return structuralColors[Math.abs(hash) % structuralColors.length];
     }
 
     function renderBubble(id, user, text, referenceUser) {
         const isSelf = (user === referenceUser);
         const nameColor = getUserColor(user);
-
         const wrapper = document.createElement("div");
         wrapper.className = `msg-wrapper ${isSelf ? 'self' : 'other'}`;
         wrapper.id = `msg-${id}`;
-
         wrapper.innerHTML = `
             <div class="user-header">
                 <span style="color: ${nameColor}">${escapeHtml(user)}</span>
@@ -160,49 +153,4 @@
             </div>
             <div class="bubble">${escapeHtml(text)}</div>
         `;
-
-        msgContainer.appendChild(wrapper);
-        msgContainer.scrollTop = msgContainer.scrollHeight;
-    }
-
-    if (syncChannel) {
-        syncChannel.onmessage = (e) => {
-            const packet = e.data;
-            if (packet.action === 'send') {
-                renderBubble(packet.id, packet.user, packet.text, uInput.value.trim());
-            } else if (packet.action === 'delete') {
-                const el = document.getElementById(`msg-${packet.id}`);
-                if (el) el.remove();
-            }
-        };
-    }
-
-    function s() {
-        const u = uInput.value.trim() || "Guest";
-        const m = mInput.value.trim();
-        if(!m) return;
-
-        const uniqueId = Date.now() + Math.random().toString(36).substr(2, 5);
-        renderBubble(uniqueId, u, m, u);
-        
-        if (syncChannel) {
-            syncChannel.postMessage({ action: 'send', id: uniqueId, user: u, text: m });
-        }
-        mInput.value = "";
-    }
-
-    function removeBubble(id) {
-        const el = document.getElementById(`msg-${id}`);
-        if (el) el.remove();
-        
-        if (syncChannel) {
-            syncChannel.postMessage({ action: 'delete', id: id });
-        }
-    }
-
-    function escapeHtml(str) {
-        return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-    }
-</script>
-</body>
-</html>
+        msgContainer.appendChild(wrapper
