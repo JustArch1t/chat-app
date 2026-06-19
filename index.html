@@ -39,11 +39,9 @@
         .msg-wrapper.self { align-self: flex-end; background: rgba(255, 255, 255, 0.15); border-bottom-right-radius: 2px; }
         .msg-wrapper.other { align-self: flex-start; background: rgba(0, 0, 0, 0.3); border-bottom-left-radius: 2px; }
 
-        /* User header and button container spacing fixed */
         .user-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; font-size: 0.75rem; font-weight: bold; min-height: 24px; }
         .actions { display: flex; gap: 8px; margin-left: 20px; flex-shrink: 0; }
         
-        /* Larger buttons */
         .btn-small {
             border: none; border-radius: 50%; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center;
             cursor: pointer; font-size: 0.85rem; font-weight: bold; -webkit-tap-highlight-color: transparent;
@@ -128,31 +126,4 @@
         bubbleEl.querySelector('input').focus();
     }
 
-    function saveEdit(id, newText) {
-        const trimmed = newText.trim();
-        if(!trimmed) return;
-        const bubbleEl = document.querySelector(`#msg-${id} .bubble`);
-        bubbleEl.innerHTML = escapeHtml(trimmed);
-        if (syncChannel) syncChannel.postMessage({ action: 'edit', id, text: trimmed });
-    }
-
-    if (syncChannel) {
-        syncChannel.onmessage = (e) => {
-            if (e.data.action === 'send') renderBubble(e.data.id, e.data.user, e.data.text, uInput.value.trim());
-            else if (e.data.action === 'delete') document.getElementById(`msg-${e.data.id}`)?.remove();
-            else if (e.data.action === 'edit') {
-                const el = document.querySelector(`#msg-${e.data.id} .bubble`);
-                if(el) el.innerText = e.data.text;
-            }
-        };
-    }
-
-    function removeBubble(id) {
-        document.getElementById(`msg-${id}`)?.remove();
-        if (syncChannel) syncChannel.postMessage({ action: 'delete', id });
-    }
-
-    function escapeHtml(str) { return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"); }
-</script>
-</body>
-</html>
+    function saveEdit(id, newText)
