@@ -61,12 +61,14 @@
             align-self: flex-start; background: rgba(0, 0, 0, 0.3); border-bottom-left-radius: 2px; 
         }
 
-        .user-header { display: flex; justify-content: space-between; margin-bottom: 2px; font-size: 0.7rem; font-weight: bold; }
-        .bubble { font-size: 0.9rem; line-height: 1.3; white-space: pre-wrap; word-break: break-word; color: #ffffff; }
-
+        .user-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2px; font-size: 0.7rem; font-weight: bold; }
+        
         .delete-btn {
-            background: transparent; border: none; color: #ff9999; font-size: 0.7rem; cursor: pointer; opacity: 0.6;
+            background: transparent; border: none; color: #ff4d4d; font-size: 0.75rem; cursor: pointer; font-weight: bold; margin-left: 10px; opacity: 0.8;
+            -webkit-tap-highlight-color: transparent;
         }
+
+        .bubble { font-size: 0.9rem; line-height: 1.3; white-space: pre-wrap; word-break: break-word; color: #ffffff; }
 
         #in { padding: 12px; display: flex; gap: 8px; align-items: center; background: rgba(0, 0, 0, 0.2); }
         
@@ -76,11 +78,11 @@
         }
         
         input {
-            background: transparent; border: none; color: white; padding: 10px 30px 10px 12px; outline: none; font-size: 0.9rem; width: 100%;
+            background: transparent; border: none; color: white; padding: 10px 16px; outline: none; font-size: 0.9rem; width: 100%;
         }
         #u { width: 70px; text-align: center; font-weight: bold; }
 
-        button.send-btn { background: transparent; border: none; padding: 5px; }
+        button.send-btn { background: transparent; border: none; padding: 5px; cursor: pointer; -webkit-tap-highlight-color: transparent; }
         button.send-btn svg { fill: #ffffff; width: 20px; height: 20px; }
 
         #msg::-webkit-scrollbar { width: 3px; }
@@ -97,7 +99,7 @@
         <div class="input-container">
             <input type="text" id="m" placeholder="Message..." autocomplete="off">
         </div>
-        <button class="send-btn" onclick="s()">
+        <button class="send-btn" id="sendBtn">
             <svg viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
         </button>
     </div>
@@ -110,8 +112,21 @@
     const msgContainer = document.getElementById("msg");
     const mInput = document.getElementById("m");
     const uInput = document.getElementById("u");
+    const sendBtn = document.getElementById("sendBtn");
 
-    mInput.addEventListener("keydown", (e) => { if (e.key === "Enter") s(); });
+    function s() {
+        const u = uInput.value.trim() || "Guest", m = mInput.value.trim();
+        if(!m) return;
+        const id = Date.now() + Math.random().toString(36).substr(2, 5);
+        renderBubble(id, u, m, u);
+        if (syncChannel) syncChannel.postMessage({ action: 'send', id, user: u, text: m });
+        mInput.value = "";
+        mInput.focus();
+    }
+
+    // Use 'pointerdown' or 'click' to ensure mobile responsiveness
+    sendBtn.addEventListener('pointerdown', (e) => { e.preventDefault(); s(); });
+    mInput.addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); s(); } });
 
     function renderBubble(id, user, text, referenceUser) {
         const isSelf = (user === referenceUser);
@@ -122,4 +137,24 @@
             <div class="user-header"><span>${escapeHtml(user)}</span><button class="delete-btn" onclick="removeBubble('${id}')">X</button></div>
             <div class="bubble">${escapeHtml(text)}</div>
         `;
-        msgContainer.appendChild
+        msgContainer.appendChild(wrapper);
+        msgContainer.scrollTop = msgContainer.scrollHeight;
+    }
+
+    if (syncChannel) {
+        syncChannel.onmessage = (e) => {
+            if (e.data.action === 'send') renderBubble(e.data.id, e.data.user, e.data.text, uInput.value.trim());
+            else if (e.data.action === 'delete') { const el = document.getElementById(`msg-${e.data.id}`); if (el) el.remove(); }
+        };
+    }
+
+    function removeBubble(id) {
+        const el = document.getElementById(`msg-${id}`);
+        if (el) el.remove();
+        if (syncChannel) syncChannel.postMessage({ action: 'delete', id });
+    }
+
+    function escapeHtml(str) { return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"); }
+</script>
+</body>
+</html>
