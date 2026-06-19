@@ -12,17 +12,25 @@ app.get('/', (req, res) => {
 });
 
 wss.on('connection', (ws) => {
-    console.log('A user connected globally!');
+    console.log('User connected');
+    
     ws.on('message', (message) => {
-        const data = message.toString();
-        wss.clients.forEach((client) => {
-            if (client.readyState === WebSocket.OPEN) {
-                client.send(data);
-            }
-        });
+        try {
+            // Parse incoming JSON action protocol safely
+            const data = JSON.parse(message.toString());
+            
+            // Broadcast the exact action payload (send, edit, or unsend) to all active users
+            wss.clients.forEach((client) => {
+                if (client.readyState === WebSocket.OPEN) {
+                    client.send(JSON.stringify(data));
+                }
+            });
+        } catch (e) {
+            console.error("Invalid frame payload received");
+        }
     });
 });
 
 server.listen(process.env.PORT || 3000, () => {
-    console.log('Server running globally!');
+    console.log('Server running dynamically');
 });
