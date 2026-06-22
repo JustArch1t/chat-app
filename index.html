@@ -55,25 +55,22 @@
     const m = document.getElementById("m");
     const u = document.getElementById("u");
 
-    document.getElementById("clearBtn").onclick = () => { if(confirm("Clear all?")) db.remove(); };
-
-    // Prevent blur when clicking emoji button
-    emojiBtn.onmousedown = (e) => e.preventDefault(); 
-    emojiBtn.onclick = () => { emojiPopup.style.display = (emojiPopup.style.display === "grid") ? "none" : "grid"; };
-    
+    // Emoji Logic: Force insertion into whichever input is currently focused
+    emojiBtn.onclick = (e) => { e.stopPropagation(); emojiPopup.style.display = (emojiPopup.style.display === "grid") ? "none" : "grid"; };
     emojiPopup.onclick = (e) => { 
         if(e.target.tagName === 'SPAN') { 
             const active = document.activeElement;
-            active.value += e.target.innerText;
-            active.focus();
+            if (active.tagName === 'INPUT') {
+                active.value += e.target.innerText;
+                active.focus();
+            }
         } 
     };
 
-    const sendMessage = () => {
-        if(m.value.trim() !== "") { db.push({ user: u.value, text: m.value.trim() }); m.value = ""; }
-    };
+    const sendMessage = () => { if(m.value.trim() !== "") { db.push({ user: u.value, text: m.value.trim() }); m.value = ""; } };
     document.getElementById("sendBtn").onclick = sendMessage;
     m.onkeypress = (e) => { if(e.key === "Enter") sendMessage(); };
+    document.getElementById("clearBtn").onclick = () => { if(confirm("Clear all?")) db.remove(); };
 
     db.on('child_added', (s) => {
         const d = s.val();
@@ -93,7 +90,9 @@
         const input = document.getElementById("edit-box");
         input.focus();
         
-        const finishEdit = () => { db.child(key).update({ text: input.value }); };
+        const finishEdit = () => { 
+            db.child(key).update({ text: input.value });
+        };
         input.onkeydown = (e) => { if(e.key === "Enter") finishEdit(); };
         input.onblur = finishEdit;
     };
