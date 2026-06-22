@@ -34,8 +34,8 @@
     <div id="msg"></div>
     <div id="in">
         <input type="text" id="u" style="width: 50px; flex-grow: 0;" readonly>
-        <button id="emojiBtn" class="action-btn" onmousedown="event.preventDefault()">😊</button>
-        <div id="emojiPopup" onmousedown="event.preventDefault()">
+        <button id="emojiBtn" class="action-btn">😊</button>
+        <div id="emojiPopup">
             <span>😀</span><span>😂</span><span>🤣</span><span>😊</span><span>💀</span>
             <span>😍</span><span>😎</span><span>🤔</span><span>😴</span><span>😭</span>
             <span>😡</span><span>👍</span><span>👎</span><span>🔥</span><span>❤️</span>
@@ -54,18 +54,25 @@
     const myId = "User-" + Math.floor(Math.random() * 1000);
     document.getElementById("u").value = myId;
 
+    let isEmojiMenuOpen = false; // Flag to track menu state
+
     const emojiBtn = document.getElementById("emojiBtn");
     const emojiPopup = document.getElementById("emojiPopup");
     const m = document.getElementById("m");
 
-    emojiBtn.onclick = (e) => { emojiPopup.style.display = (emojiPopup.style.display === "grid") ? "none" : "grid"; };
-    
-    // Updated: Insert emoji into currently active input
+    emojiBtn.onclick = (e) => { 
+        e.stopPropagation(); 
+        isEmojiMenuOpen = !isEmojiMenuOpen;
+        emojiPopup.style.display = isEmojiMenuOpen ? "grid" : "none"; 
+    };
+
     emojiPopup.onclick = (e) => { 
         if(e.target.tagName === 'SPAN') { 
             const activeInput = document.activeElement;
             activeInput.value += e.target.innerText;
             activeInput.focus();
+            isEmojiMenuOpen = false;
+            emojiPopup.style.display = "none";
         } 
     };
 
@@ -92,9 +99,14 @@
         const input = document.getElementById("edit-box");
         input.focus();
         
-        const saveEdit = () => { db.child(key).update({ text: input.value }); };
-        input.onkeydown = (e) => { if(e.key === "Enter") { saveEdit(); input.blur(); } };
-        input.onblur = saveEdit;
+        input.onkeydown = (e) => { if(e.key === "Enter") { db.child(key).update({ text: input.value }); input.blur(); } };
+        
+        input.onblur = () => {
+            // Only save if the emoji menu is NOT open
+            if (!isEmojiMenuOpen) {
+                db.child(key).update({ text: input.value });
+            }
+        };
     };
 
     db.on('child_changed', (s) => { document.getElementById(s.key).querySelector('.bubble').innerHTML = `<span class="txt">${s.val().text}</span> <span style="margin-left:8px; cursor:pointer" onclick="edit('${s.key}')">✎</span> <span style="margin-left:8px; cursor:pointer" onclick="db.child('${s.key}').remove()">✖</span>`; });
