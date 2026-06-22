@@ -1,188 +1,373 @@
+```html
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Professional Glass Chat</title>
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
-    <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Glass Chat App</title>
 
-        body { 
-            height: 100dvh; 
-            display: flex; 
-            justify-content: center; 
-            align-items: center; 
-            /* Replace 'background.jpg' with a real image path or a color like #04080e */
-            background: url('background.jpg') no-repeat center center fixed; 
-            background-size: cover; 
-            background-color: #04080e;
-            font-family: 'Segoe UI', sans-serif; 
-            overflow: hidden; 
-        }
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
 
-        #box { 
-            width: 95vw; 
-            max-width: 500px; 
-            height: 90dvh; 
-            background: rgba(255, 255, 255, 0.1); 
-            backdrop-filter: blur(20px); 
-            -webkit-backdrop-filter: blur(20px);
-            border: 1px solid rgba(255, 255, 255, 0.2); 
-            border-radius: 25px; 
-            padding: 25px; 
-            display: flex; 
-            flex-direction: column; 
-            box-shadow: 0 10px 40px rgba(0,0,0,0.6);
-        }
+<style>
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+    font-family:Segoe UI,sans-serif;
+}
 
-        #msg-container { 
-            flex-grow: 1; 
-            overflow-y: auto; 
-            display: flex; 
-            flex-direction: column; 
-            gap: 15px; 
-            margin-bottom: 20px; 
-            padding-right: 5px;
-        }
+body{
+    height:100vh;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    background:#04080e;
+    overflow:hidden;
+}
 
-        .bubble-wrapper { display: flex; flex-direction: column; width: 100%; }
-        .bubble-wrapper.mine { align-items: flex-end; }
-        
-        .bubble { 
-            background: rgba(0,0,0,0.4); 
-            color: #ffffff; 
-            padding: 14px 20px; 
-            border-radius: 20px; 
-            max-width: 85%; 
-        }
-        .mine .bubble { background: rgba(0, 123, 255, 0.7); }
-        
-        .header { font-size: 0.75rem; color: #d1d1d1; margin-bottom: 6px; display: flex; justify-content: space-between; }
-        .content { font-size: 1rem; word-break: break-word; }
+#box{
+    width:95vw;
+    max-width:500px;
+    height:90vh;
+    background:rgba(255,255,255,0.1);
+    backdrop-filter:blur(20px);
+    -webkit-backdrop-filter:blur(20px);
+    border:1px solid rgba(255,255,255,0.2);
+    border-radius:25px;
+    padding:20px;
+    display:flex;
+    flex-direction:column;
+    box-shadow:0 10px 40px rgba(0,0,0,.6);
+}
 
-        #input-area { display: flex; gap: 10px; position: relative; }
-        input { background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.3); color: white; padding: 12px; border-radius: 15px; flex-grow: 1; }
-        button { background: rgba(255,255,255,0.2); border: none; color: white; padding: 10px 15px; border-radius: 15px; cursor: pointer; }
-        button:hover { background: rgba(255,255,255,0.3); }
+#msg-container{
+    flex:1;
+    overflow-y:auto;
+    display:flex;
+    flex-direction:column;
+    gap:12px;
+    margin-bottom:15px;
+    padding-right:5px;
+}
 
-        #emoji-popup { 
-            display: none; position: absolute; bottom: 70px; left: 0; 
-            background: #222; padding: 15px; border-radius: 20px; 
-            grid-template-columns: repeat(5, 1fr); gap: 10px; 
-            z-index: 1000; cursor: pointer; border: 1px solid #444; 
-        }
-    </style>
+.bubble-wrapper{
+    display:flex;
+    flex-direction:column;
+}
+
+.bubble-wrapper.mine{
+    align-items:flex-end;
+}
+
+.header{
+    font-size:.75rem;
+    color:#ddd;
+    margin-bottom:4px;
+}
+
+.bubble{
+    max-width:85%;
+    padding:12px 16px;
+    border-radius:18px;
+    background:rgba(0,0,0,.4);
+    color:white;
+    word-break:break-word;
+}
+
+.mine .bubble{
+    background:rgba(0,123,255,.7);
+}
+
+.controls{
+    display:flex;
+    gap:5px;
+    margin-top:5px;
+}
+
+.controls button{
+    padding:4px 8px;
+    font-size:12px;
+}
+
+#input-area{
+    display:flex;
+    gap:8px;
+    position:relative;
+}
+
+input{
+    padding:12px;
+    border:none;
+    outline:none;
+    border-radius:12px;
+    background:rgba(255,255,255,.15);
+    color:white;
+}
+
+#name{
+    width:90px;
+}
+
+#text{
+    flex:1;
+}
+
+button{
+    border:none;
+    cursor:pointer;
+    padding:10px 14px;
+    border-radius:12px;
+    background:rgba(255,255,255,.2);
+    color:white;
+}
+
+button:hover{
+    background:rgba(255,255,255,.3);
+}
+
+#emoji-popup{
+    display:none;
+    position:absolute;
+    bottom:65px;
+    left:0;
+    background:#222;
+    padding:12px;
+    border-radius:15px;
+    border:1px solid #444;
+    grid-template-columns:repeat(5,1fr);
+    gap:8px;
+    z-index:999;
+}
+
+#emoji-popup span{
+    cursor:pointer;
+    font-size:22px;
+}
+</style>
 </head>
+
 <body>
 
 <div id="box">
+
     <div id="msg-container"></div>
+
     <div id="input-area">
-        <input type="text" id="name" style="width: 70px; flex-grow: 0;" placeholder="Name">
+        <input type="text" id="name" placeholder="Name">
+
         <button id="emojiBtn">😊</button>
+
         <button id="clearBtn">🗑️</button>
+
         <input type="text" id="text" placeholder="Message...">
+
         <button id="sendBtn">➤</button>
+
+        <div id="emoji-popup">
+            <span>😀</span>
+            <span>😂</span>
+            <span>😍</span>
+            <span>😎</span>
+            <span>🔥</span>
+            <span>❤️</span>
+            <span>👍</span>
+            <span>🎉</span>
+            <span>🤔</span>
+            <span>😭</span>
+        </div>
+    </div>
+
+</div>
+
 <script>
-    // Firebase Configuration
-    firebase.initializeApp({ 
-        apiKey: "AIzaSyBXjcr21ZUrF5ty2JKH4BuaLqjHaqHitD8", 
-        databaseURL: "https://chat-room-e8152-default-rtdb.asia-southeast1.firebasedatabase.app", 
-        projectId: "chat-room-e8152" 
+
+// Firebase Configuration
+firebase.initializeApp({
+    apiKey: "AIzaSyBXjcr21ZUrF5ty2JKH4BuaLqjHaqHitD8",
+    authDomain: "chat-room-e8152.firebaseapp.com",
+    databaseURL: "https://chat-room-e8152-default-rtdb.asia-southeast1.firebasedatabase.app",
+    projectId: "chat-room-e8152",
+    storageBucket: "chat-room-e8152.firebasestorage.app",
+    messagingSenderId: "875122406489",
+    appId: "1:875122406489:web:c0f66c7a7903b9e87eed48",
+    measurementId: "G-3CG2NMQEPN"
+});
+
+const db = firebase.database().ref("messages");
+
+const msgList = document.getElementById("msg-container");
+const textInput = document.getElementById("text");
+const nameInput = document.getElementById("name");
+const emojiPopup = document.getElementById("emoji-popup");
+
+// Random username
+nameInput.value = "User-" + Math.floor(Math.random() * 1000);
+
+// Emoji Popup
+document.getElementById("emojiBtn").onclick = (e)=>{
+    e.stopPropagation();
+
+    emojiPopup.style.display =
+        emojiPopup.style.display === "grid"
+        ? "none"
+        : "grid";
+};
+
+emojiPopup.onclick = (e)=>{
+    if(e.target.tagName === "SPAN"){
+        textInput.value += e.target.innerText;
+        textInput.focus();
+    }
+};
+
+document.onclick = ()=>{
+    emojiPopup.style.display = "none";
+};
+
+// Send Message
+function send(){
+
+    const text = textInput.value.trim();
+
+    if(!text) return;
+
+    db.push({
+        user:nameInput.value || "Anon",
+        text:text,
+        time:Date.now()
     });
-    
-    const db = firebase.database().ref('messages');
-    const msgList = document.getElementById("msg-container");
-    const textInput = document.getElementById("text");
-    const nameInput = document.getElementById("name");
-    const emojiPopup = document.getElementById("emoji-popup");
 
-    // Assign a random username on load
-    nameInput.value = "User-" + Math.floor(Math.random() * 1000);
+    textInput.value="";
+}
 
-    // Emoji Logic: prevent blur on mousedown
-    const emojiBtn = document.getElementById("emojiBtn");
-    emojiBtn.onmousedown = (e) => e.preventDefault(); 
-    
-    emojiBtn.onclick = (e) => { 
-        e.stopPropagation(); 
-        emojiPopup.style.display = (emojiPopup.style.display === "grid" ? "none" : "grid"); 
-    };
+document.getElementById("sendBtn").onclick = send;
 
-    emojiPopup.onclick = (e) => { 
-        if(e.target.tagName === 'SPAN') { 
-            const active = document.activeElement;
-            // Only add emoji if we are typing in an input
-            if(active.tagName === 'INPUT') { 
-                active.value += e.target.innerText; 
-                active.focus(); 
-            }
-        } 
-    };
+textInput.addEventListener("keypress",(e)=>{
+    if(e.key === "Enter"){
+        send();
+    }
+});
 
-    // Close emoji popup if clicking outside
-    document.onclick = () => emojiPopup.style.display = "none";
+// Clear Chat
+document.getElementById("clearBtn").onclick = ()=>{
+    if(confirm("Delete all messages?")){
+        db.remove();
+    }
+};
 
-    // Send Logic
-    const send = () => { 
-        if(textInput.value.trim()) { 
-            db.push({ 
-                user: nameInput.value || "Anon", 
-                text: textInput.value.trim() 
-            }); 
-            textInput.value = ""; 
-        } 
-    };
+// Edit/Delete
+msgList.addEventListener("click",(e)=>{
 
-    document.getElementById("sendBtn").onclick = send;
-    textInput.onkeypress = (e) => { if(e.key === "Enter") send(); };
-    document.getElementById("clearBtn").onclick = () => { if(confirm("Clear all?")) db.remove(); };
+    const wrapper = e.target.closest(".bubble-wrapper");
 
-    // Edit and Delete Logic via Event Delegation
-    msgList.onclick = (e) => {
-        const wrapper = e.target.closest('.bubble-wrapper');
-        if(!wrapper) return;
-        const key = wrapper.id;
-        
-        if(e.target.classList.contains('del')) {
-            db.child(key).remove();
-        } else if(e.target.classList.contains('edit')) {
-            startEdit(key);
+    if(!wrapper) return;
+
+    const key = wrapper.dataset.key;
+
+    if(e.target.classList.contains("del")){
+        db.child(key).remove();
+    }
+
+    if(e.target.classList.contains("edit")){
+        startEdit(key);
+    }
+});
+
+function startEdit(key){
+
+    const wrapper =
+        document.querySelector(`[data-key="${key}"]`);
+
+    const content =
+        wrapper.querySelector(".content");
+
+    const oldText = content.innerText;
+
+    const input = document.createElement("input");
+
+    input.value = oldText;
+
+    content.replaceWith(input);
+
+    input.focus();
+
+    function save(){
+
+        const newValue = input.value.trim();
+
+        if(newValue){
+            db.child(key).update({
+                text:newValue
+            });
         }
-    };
+    }
 
-    // Robust Edit Function
-    function startEdit(key) {
-        const wrapper = document.getElementById(key);
-        const txt = wrapper.querySelector('.content');
-        const input = document.createElement('input');
-        
-        input.value = txt.innerText;
-        input.style.width = "100%";
-        input.style.padding = "5px";
-        
-        // Replace text with input box
-        wrapper.querySelector('.bubble').replaceChild(input, txt);
-        input.focus();
-
-        const save = () => {
-            const val = input.value.trim();
-            db.child(key).update({ text: val });
-        };
-
-        input.onkeydown = (e) => {
-            if(e.key === 'Enter') {
-                e.preventDefault();
-                save();
-                input.blur();
-            }
-        };
-
-        input.onblur = (e) => {
-            // If the user clicked the emoji popup, do not close the edit box
-            if(e.relatedTarget && e.relatedTarget.closest('#emoji-popup')) return;
-            
+    input.addEventListener("keydown",(e)=>{
+        if(e.key === "Enter"){
             save();
-            // Put
+            input.blur();
+        }
+    });
+
+    input.addEventListener("blur",save);
+}
+
+// Display Messages
+db.on("value",(snapshot)=>{
+
+    msgList.innerHTML="";
+
+    snapshot.forEach((child)=>{
+
+        const data = child.val();
+        const key = child.key;
+
+        const wrapper =
+            document.createElement("div");
+
+        wrapper.className =
+            "bubble-wrapper";
+
+        wrapper.dataset.key = key;
+
+        if(data.user === nameInput.value){
+            wrapper.classList.add("mine");
+        }
+
+        const time =
+            new Date(data.time || Date.now())
+            .toLocaleTimeString([],{
+                hour:"2-digit",
+                minute:"2-digit"
+            });
+
+        wrapper.innerHTML = `
+            <div class="header">
+                ${data.user} • ${time}
+            </div>
+
+            <div class="bubble">
+                <div class="content">
+                    ${data.text}
+                </div>
+            </div>
+
+            <div class="controls">
+                <button class="edit">✏️</button>
+                <button class="del">🗑️</button>
+            </div>
+        `;
+
+        msgList.appendChild(wrapper);
+    });
+
+    msgList.scrollTop =
+        msgList.scrollHeight;
+});
+
+</script>
+
+</body>
+</html>
+```
