@@ -22,23 +22,44 @@ body{
     display:flex;
     justify-content:center;
     align-items:center;
-    background:#04080e;
     overflow:hidden;
+
+    background:
+        linear-gradient(
+            rgba(0,0,0,.35),
+            rgba(0,0,0,.35)
+        ),
+        url("background.jpg");
+
+    background-size:cover;
+    background-position:center;
+    background-repeat:no-repeat;
+    background-attachment:fixed;
 }
+
+
 
 #box{
     width:95vw;
     max-width:500px;
     height:90vh;
-    background:rgba(255,255,255,0.1);
-    backdrop-filter:blur(20px);
-    -webkit-backdrop-filter:blur(20px);
-    border:1px solid rgba(255,255,255,0.2);
-    border-radius:25px;
+
+    background:rgba(255,255,255,0.08);
+
+    backdrop-filter:blur(25px);
+    -webkit-backdrop-filter:blur(25px);
+
+    border:1px solid rgba(255,255,255,.18);
+
+    border-radius:28px;
+
+    box-shadow:
+        0 8px 32px rgba(0,0,0,.45),
+        inset 0 1px 0 rgba(255,255,255,.15);
+
     padding:20px;
     display:flex;
     flex-direction:column;
-    box-shadow:0 10px 40px rgba(0,0,0,.6);
 }
 
 #msg-container{
@@ -70,13 +91,22 @@ body{
     max-width:85%;
     padding:12px 16px;
     border-radius:18px;
-    background:rgba(0,0,0,.4);
+    transition:all .2s ease;
+
+    background:rgba(255,255,255,.08);
+    backdrop-filter:blur(10px);
+    border:1px solid rgba(255,255,255,.1);
     color:white;
     word-break:break-word;
 }
 
+.bubble:hover{
+    transform:translateY(-2px);
+}
+
 .mine .bubble{
-    background:rgba(0,123,255,.7);
+    background:rgba(0,140,255,.35);
+    border:1px solid rgba(255,255,255,.15);
 }
 
 .controls{
@@ -200,12 +230,23 @@ const msgList = document.getElementById("msg-container");
 const textInput = document.getElementById("text");
 const nameInput = document.getElementById("name");
 const emojiPopup = document.getElementById("emoji-popup");
-
+let activeInput = null;
 // Random username
-nameInput.value = "User-" + Math.floor(Math.random() * 1000);
+nameInput.value =
+    localStorage.getItem("chatName") ||
+    "User-" + Math.floor(Math.random() * 1000);
 
-// Emoji Popup
-document.getElementById("emojiBtn").onclick = (e)=>{
+nameInput.addEventListener("input",()=>{
+    localStorage.setItem("chatName",nameInput.value);
+});
+
+const emojiBtn = document.getElementById("emojiBtn");
+
+emojiBtn.addEventListener("mousedown",(e)=>{
+    e.preventDefault();
+});
+
+emojiBtn.onclick = (e)=>{
     e.stopPropagation();
 
     emojiPopup.style.display =
@@ -215,16 +256,27 @@ document.getElementById("emojiBtn").onclick = (e)=>{
 };
 
 emojiPopup.onclick = (e)=>{
-    if(e.target.tagName === "SPAN"){
-        textInput.value += e.target.innerText;
-        textInput.focus();
+
+    if(e.target.tagName !== "SPAN") return;
+
+    const target = activeInput || textInput;
+
+    target.value += e.target.innerText;
+
+    target.focus();
+};
+
+document.addEventListener("click",(e)=>{
+
+    if(
+        emojiPopup.contains(e.target) ||
+        emojiBtn.contains(e.target)
+    ){
+        return;
     }
-};
 
-document.onclick = ()=>{
     emojiPopup.style.display = "none";
-};
-
+});
 // Send Message
 function send(){
 
@@ -265,13 +317,15 @@ msgList.addEventListener("click",(e)=>{
 
     const key = wrapper.dataset.key;
 
-    if(e.target.classList.contains("del")){
-        db.child(key).remove();
-    }
+if(!wrapper.classList.contains("mine")) return;
 
-    if(e.target.classList.contains("edit")){
-        startEdit(key);
-    }
+if(e.target.classList.contains("del")){
+    db.child(key).remove();
+}
+
+if(e.target.classList.contains("edit")){
+    startEdit(key);
+}
 });
 
 function startEdit(key){
@@ -290,9 +344,13 @@ function startEdit(key){
 
     content.replaceWith(input);
 
+    activeInput = input;
+
     input.focus();
 
     function save(){
+
+        activeInput = null;
 
         const newValue = input.value.trim();
 
@@ -310,9 +368,15 @@ function startEdit(key){
         }
     });
 
-    input.addEventListener("blur",save);
-}
+    input.addEventListener("blur",(e)=>{
 
+        if(emojiPopup.style.display === "grid"){
+            return;
+        }
+
+        save();
+    });
+}
 // Display Messages
 db.on("value",(snapshot)=>{
 
@@ -353,10 +417,12 @@ db.on("value",(snapshot)=>{
                 </div>
             </div>
 
-            <div class="controls">
-                <button class="edit">✏️</button>
-                <button class="del">🗑️</button>
-            </div>
+${data.user === nameInput.value ? `
+<div class="controls">
+    <button class="edit">✏️</button>
+    <button class="del">🗑️</button>
+</div>
+` : ""}
         `;
 
         msgList.appendChild(wrapper);
