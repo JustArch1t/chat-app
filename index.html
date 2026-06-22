@@ -6,7 +6,6 @@
     <title>Group-Chat</title>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
-    
     <style>
         * { box-sizing: border-box; touch-action: manipulation; }
         body { font-family: sans-serif; background: #04080e url('background.jpg') no-repeat center center fixed; background-size: cover; margin: 0; display: flex; justify-content: center; align-items: center; height: 100dvh; overflow: hidden; }
@@ -15,8 +14,9 @@
         .msg-container { display: flex; width: 100%; align-items: flex-end; }
         .mine { justify-content: flex-end; }
         .theirs { justify-content: flex-start; }
-        .bubble { padding: 12px 18px; border-radius: 20px; max-width: 80%; color: white; background: #444; font-size: 1rem; position: relative; }
-        .mine .bubble { background: #007bff; border-bottom-right-radius: 4px; }
+        .bubble { padding: 10px 15px; border-radius: 15px; max-width: 80%; color: white; background: #444; font-size: 1rem; display: flex; flex-direction: column; }
+        .mine .bubble { background: #007bff; }
+        .msg-header { font-size: 0.75rem; opacity: 0.8; display: flex; justify-content: space-between; margin-bottom: 4px; }
         #in { display: flex; gap: 5px; align-items: center; width: 100%; flex-shrink: 0; margin-top: 8px; position: relative; }
         input { background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: white; padding: 10px; border-radius: 15px; flex-grow: 1; min-width: 0; }
         .action-btn { background: none; border: none; cursor: pointer; padding: 5px; font-size: 1.2rem; color: white; flex-shrink: 0; }
@@ -50,54 +50,57 @@
     
     document.getElementById("u").value = "User-" + Math.floor(Math.random() * 1000);
 
-    let isEmojiMenuOpen = false;
     const emojiBtn = document.getElementById("emojiBtn");
     const emojiPopup = document.getElementById("emojiPopup");
     const m = document.getElementById("m");
     const u = document.getElementById("u");
 
-    // Clear Button
     document.getElementById("clearBtn").onclick = () => { if(confirm("Clear all?")) db.remove(); };
 
-    // Emoji Logic
-    emojiBtn.onclick = (e) => { e.stopPropagation(); isEmojiMenuOpen = !isEmojiMenuOpen; emojiPopup.style.display = isEmojiMenuOpen ? "grid" : "none"; };
-    emojiPopup.onclick = (e) => { if(e.target.tagName === 'SPAN') { document.activeElement.value += e.target.innerText; document.activeElement.focus(); } };
-    document.onclick = () => { emojiPopup.style.display = "none"; isEmojiMenuOpen = false; };
+    // Prevent blur when clicking emoji button
+    emojiBtn.onmousedown = (e) => e.preventDefault(); 
+    emojiBtn.onclick = () => { emojiPopup.style.display = (emojiPopup.style.display === "grid") ? "none" : "grid"; };
+    
+    emojiPopup.onclick = (e) => { 
+        if(e.target.tagName === 'SPAN') { 
+            const active = document.activeElement;
+            active.value += e.target.innerText;
+            active.focus();
+        } 
+    };
 
-    // Send Logic (Triggered by Button OR Enter Key)
     const sendMessage = () => {
-        if(m.value.trim() !== "") { 
-            db.push({ user: u.value, text: m.value.trim() }); 
-            m.value = ""; 
-        }
+        if(m.value.trim() !== "") { db.push({ user: u.value, text: m.value.trim() }); m.value = ""; }
     };
     document.getElementById("sendBtn").onclick = sendMessage;
     m.onkeypress = (e) => { if(e.key === "Enter") sendMessage(); };
 
-    // Render Messages
     db.on('child_added', (s) => {
         const d = s.val();
         const div = document.createElement("div");
         div.id = s.key;
         div.className = `msg-container ${d.user === u.value ? 'mine' : 'theirs'}`;
-        div.innerHTML = `<div class="bubble"><b>${d.user}:</b> <span class="txt">${d.text}</span> ${d.user === u.value ? '<span style="margin-left:8px; cursor:pointer" onclick="window.edit(\''+s.key+'\')">✎</span><span style="margin-left:8px; cursor:pointer" onclick="db.child(\''+s.key+'\').remove()">✖</span>' : ''}</div>`;
+        div.innerHTML = `<div class="bubble"><div class="msg-header"><b>${d.user}</b>${d.user === u.value ? '<span><span onclick="window.edit(\''+s.key+'\')" style="cursor:pointer">✎</span> <span onclick="db.child(\''+s.key+'\').remove()" style="cursor:pointer">✖</span></span>' : ''}</div><span class="txt">${d.text}</span></div>`;
         document.getElementById("msg").appendChild(div);
         document.getElementById("msg").scrollTop = document.getElementById("msg").scrollHeight;
     });
 
     window.edit = (key) => {
         const bubble = document.getElementById(key).querySelector('.bubble');
-        const oldText = bubble.querySelector('.txt').innerText;
-        bubble.innerHTML = `<input type="text" value="${oldText}" id="edit-box" style="width:100%; border-radius:5px; padding:5px; color:black;">`;
+        const txtSpan = bubble.querySelector('.txt');
+        const oldText = txtSpan.innerText;
+        txtSpan.innerHTML = `<input type="text" value="${oldText}" id="edit-box" style="width:100%; border-radius:5px; padding:5px; color:black;">`;
         const input = document.getElementById("edit-box");
         input.focus();
-        input.onkeydown = (e) => { if(e.key === "Enter") db.child(key).update({ text: input.value }); };
-        input.onblur = () => { if(!isEmojiMenuOpen) db.child(key).update({ text: input.value }); };
+        
+        const finishEdit = () => { db.child(key).update({ text: input.value }); };
+        input.onkeydown = (e) => { if(e.key === "Enter") finishEdit(); };
+        input.onblur = finishEdit;
     };
 
-    db.on('child_changed', (s) => { 
+    db.on('child_changed', (s) => {
         const d = s.val();
-        document.getElementById(s.key).querySelector('.bubble').innerHTML = `<b>${d.user}:</b> <span class="txt">${d.text}</span> <span style="margin-left:8px; cursor:pointer" onclick="window.edit('${s.key}')">✎</span> <span style="margin-left:8px; cursor:pointer" onclick="db.child('${s.key}').remove()">✖</span>`; 
+        document.getElementById(s.key).querySelector('.bubble').innerHTML = `<div class="msg-header"><b>${d.user}</b>${d.user === u.value ? '<span><span onclick="window.edit(\''+s.key+'\')" style="cursor:pointer">✎</span> <span onclick="db.child(\''+s.key+'\').remove()" style="cursor:pointer">✖</span></span>' : ''}</div><span class="txt">${d.text}</span>`;
     });
     db.on('child_removed', (s) => document.getElementById(s.key)?.remove());
 </script>
