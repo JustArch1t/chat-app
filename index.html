@@ -3,26 +3,25 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Glass-Chat Professional</title>
+    <title>Professional Glass Chat</title>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
-    
     <style>
-        /* Reset and Base Scaling */
         * { box-sizing: border-box; margin: 0; padding: 0; }
-        
+
         body { 
             height: 100dvh; 
             display: flex; 
             justify-content: center; 
             align-items: center; 
+            /* Replace 'background.jpg' with a real image path or a color like #04080e */
             background: url('background.jpg') no-repeat center center fixed; 
             background-size: cover; 
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            background-color: #04080e;
+            font-family: 'Segoe UI', sans-serif; 
             overflow: hidden; 
         }
 
-        /* Glassmorphism Container */
         #box { 
             width: 95vw; 
             max-width: 500px; 
@@ -48,7 +47,6 @@
             padding-right: 5px;
         }
 
-        /* Message Bubbles - Distinct Styling */
         .bubble-wrapper { display: flex; flex-direction: column; width: 100%; }
         .bubble-wrapper.mine { align-items: flex-end; }
         
@@ -58,58 +56,22 @@
             padding: 14px 20px; 
             border-radius: 20px; 
             max-width: 85%; 
-            position: relative;
         }
-        
         .mine .bubble { background: rgba(0, 123, 255, 0.7); }
         
-        .header { 
-            font-size: 0.75rem; 
-            color: #d1d1d1; 
-            margin-bottom: 6px; 
-            display: flex; 
-            justify-content: space-between; 
-        }
-        
+        .header { font-size: 0.75rem; color: #d1d1d1; margin-bottom: 6px; display: flex; justify-content: space-between; }
         .content { font-size: 1rem; word-break: break-word; }
 
-        /* Input Area and Controls */
         #input-area { display: flex; gap: 10px; position: relative; }
-        
-        input { 
-            background: rgba(255,255,255,0.15); 
-            border: 1px solid rgba(255,255,255,0.3); 
-            color: white; 
-            padding: 12px; 
-            border-radius: 15px; 
-            flex-grow: 1; 
-        }
-        
-        button { 
-            background: rgba(255,255,255,0.2); 
-            border: none; 
-            color: white; 
-            padding: 10px 15px; 
-            border-radius: 15px; 
-            cursor: pointer; 
-            transition: background 0.2s;
-        }
+        input { background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.3); color: white; padding: 12px; border-radius: 15px; flex-grow: 1; }
+        button { background: rgba(255,255,255,0.2); border: none; color: white; padding: 10px 15px; border-radius: 15px; cursor: pointer; }
         button:hover { background: rgba(255,255,255,0.3); }
 
-        /* Emoji Popup Styling */
         #emoji-popup { 
-            display: none; 
-            position: absolute; 
-            bottom: 70px; 
-            left: 0; 
-            background: #222; 
-            padding: 15px; 
-            border-radius: 20px; 
-            grid-template-columns: repeat(5, 1fr); 
-            gap: 10px; 
-            z-index: 1000; 
-            cursor: pointer; 
-            border: 1px solid #444; 
+            display: none; position: absolute; bottom: 70px; left: 0; 
+            background: #222; padding: 15px; border-radius: 20px; 
+            grid-template-columns: repeat(5, 1fr); gap: 10px; 
+            z-index: 1000; cursor: pointer; border: 1px solid #444; 
         }
     </style>
 </head>
@@ -123,16 +85,6 @@
         <button id="clearBtn">🗑️</button>
         <input type="text" id="text" placeholder="Message...">
         <button id="sendBtn">➤</button>
-        
-        <div id="emoji-popup">
-            <span>😀</span><span>😂</span><span>🤣</span><span>😊</span><span>💀</span>
-            <span>😍</span><span>😎</span><span>🤔</span><span>😴</span><span>😭</span>
-            <span>😡</span><span>👍</span><span>👎</span><span>🔥</span><span>❤️</span>
-            <span>✨</span><span>🎉</span><span>🚀</span><span>💯</span><span>🐱</span>
-            <span>🐶</span><span>⚽</span><span>💡</span><span>🍔</span><span>🎮</span>
-        </div>
-    </div>
-</div>
 <script>
     // Firebase Configuration
     firebase.initializeApp({ 
@@ -147,19 +99,22 @@
     const nameInput = document.getElementById("name");
     const emojiPopup = document.getElementById("emoji-popup");
 
-    // Assign random name
+    // Assign a random username on load
     nameInput.value = "User-" + Math.floor(Math.random() * 1000);
 
-    // Emoji: Prevent blur and target currently focused input
-    document.getElementById("emojiBtn").onmousedown = (e) => e.preventDefault();
-    document.getElementById("emojiBtn").onclick = (e) => { 
+    // Emoji Logic: prevent blur on mousedown
+    const emojiBtn = document.getElementById("emojiBtn");
+    emojiBtn.onmousedown = (e) => e.preventDefault(); 
+    
+    emojiBtn.onclick = (e) => { 
         e.stopPropagation(); 
         emojiPopup.style.display = (emojiPopup.style.display === "grid" ? "none" : "grid"); 
     };
-    
+
     emojiPopup.onclick = (e) => { 
         if(e.target.tagName === 'SPAN') { 
             const active = document.activeElement;
+            // Only add emoji if we are typing in an input
             if(active.tagName === 'INPUT') { 
                 active.value += e.target.innerText; 
                 active.focus(); 
@@ -167,65 +122,67 @@
         } 
     };
 
-    // Close emoji popup when clicking elsewhere
+    // Close emoji popup if clicking outside
     document.onclick = () => emojiPopup.style.display = "none";
 
-    // Send Message
+    // Send Logic
     const send = () => { 
         if(textInput.value.trim()) { 
-            db.push({ user: nameInput.value || "Anon", text: textInput.value.trim() }); 
+            db.push({ 
+                user: nameInput.value || "Anon", 
+                text: textInput.value.trim() 
+            }); 
             textInput.value = ""; 
         } 
     };
+
     document.getElementById("sendBtn").onclick = send;
     textInput.onkeypress = (e) => { if(e.key === "Enter") send(); };
     document.getElementById("clearBtn").onclick = () => { if(confirm("Clear all?")) db.remove(); };
 
-    // Event Delegation: Edit/Delete
+    // Edit and Delete Logic via Event Delegation
     msgList.onclick = (e) => {
         const wrapper = e.target.closest('.bubble-wrapper');
         if(!wrapper) return;
         const key = wrapper.id;
-        if(e.target.classList.contains('del')) db.child(key).remove();
-        if(e.target.classList.contains('edit')) startEdit(key);
+        
+        if(e.target.classList.contains('del')) {
+            db.child(key).remove();
+        } else if(e.target.classList.contains('edit')) {
+            startEdit(key);
+        }
     };
 
+    // Robust Edit Function
     function startEdit(key) {
         const wrapper = document.getElementById(key);
         const txt = wrapper.querySelector('.content');
         const input = document.createElement('input');
+        
         input.value = txt.innerText;
         input.style.width = "100%";
+        input.style.padding = "5px";
+        
+        // Replace text with input box
         wrapper.querySelector('.bubble').replaceChild(input, txt);
         input.focus();
 
-        input.onblur = (e) => {
-            // Keep box open if clicking emoji popup
-            if(e.relatedTarget && e.relatedTarget.closest('#emoji-popup')) return;
-            db.child(key).update({ text: input.value });
-            wrapper.querySelector('.bubble').replaceChild(txt, input);
+        const save = () => {
+            const val = input.value.trim();
+            db.child(key).update({ text: val });
         };
-        input.onkeydown = (e) => { if(e.key === 'Enter') input.blur(); };
-    }
 
-    // Database Listeners
-    db.on('child_added', (s) => {
-        const d = s.val(), div = document.createElement("div");
-        div.id = s.key;
-        div.className = "bubble-wrapper" + (d.user === nameInput.value ? " mine" : "");
-        div.innerHTML = `<div class="bubble"><div class="header"><b>${d.user}</b> ${d.user === nameInput.value ? '<span class="edit" style="cursor:pointer">✎</span> <span class="del" style="cursor:pointer">✖</span>' : ''}</div><div class="content">${d.text}</div></div>`;
-        msgList.appendChild(div);
-        msgList.scrollTop = msgList.scrollHeight;
-    });
+        input.onkeydown = (e) => {
+            if(e.key === 'Enter') {
+                e.preventDefault();
+                save();
+                input.blur();
+            }
+        };
 
-    db.on('child_changed', (s) => { 
-        const el = document.getElementById(s.key);
-        if(el) el.querySelector('.content').innerText = s.val().text; 
-    });
-    db.on('child_removed', (s) => { 
-        const el = document.getElementById(s.key);
-        if(el) el.remove(); 
-    });
-</script>
-</body>
-</html>
+        input.onblur = (e) => {
+            // If the user clicked the emoji popup, do not close the edit box
+            if(e.relatedTarget && e.relatedTarget.closest('#emoji-popup')) return;
+            
+            save();
+            // Put
