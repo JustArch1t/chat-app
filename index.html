@@ -80,10 +80,13 @@
     window.edit = (key) => {
         const bubble = document.getElementById(key).querySelector('.bubble');
         const oldText = bubble.querySelector('.txt').innerText;
-        bubble.innerHTML = `<input type="text" value="${oldText}" id="edit-box" style="width:100%; border-radius:5px; padding:5px;">`;
+        bubble.innerHTML = `<input type="text" value="${oldText}" id="edit-box" style="width:100%; border-radius:5px; padding:5px; color:black;">`;
         const input = document.getElementById("edit-box");
         input.focus();
-        input.onblur = () => db.child(key).update({ text: input.value });
+        
+        const saveEdit = () => { db.child(key).update({ text: input.value }); };
+        input.onkeydown = (e) => { if(e.key === "Enter") { saveEdit(); input.blur(); } };
+        input.onblur = saveEdit;
     };
 
     db.on('child_changed', (s) => { document.getElementById(s.key).querySelector('.bubble').innerHTML = `<span class="txt">${s.val().text}</span> <span style="margin-left:8px; cursor:pointer" onclick="edit('${s.key}')">✎</span> <span style="margin-left:8px; cursor:pointer" onclick="db.child('${s.key}').remove()">✖</span>`; });
