@@ -1,0 +1,1366 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Glass Chat</title>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+<style>
+/* ══════════════════════════════════════
+   RESET & BASE
+══════════════════════════════════════ */
+*, *::before, *::after {
+  margin: 0; padding: 0; box-sizing: border-box;
+  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+}
+
+:root {
+  --accent:  rgba(0,140,255,.55);
+  --accent-b: rgba(0,140,255,.35);
+  --glass-bg: rgba(255,255,255,.08);
+  --glass-border: rgba(255,255,255,.16);
+  --glass-blur: blur(22px);
+  --text: #fff;
+  --text-dim: rgba(255,255,255,.55);
+  --radius-bubble: 20px;
+  --radius-input: 14px;
+  --transition: .18s ease;
+}
+
+body {
+  height: 100vh; overflow: hidden;
+  display: flex; justify-content: center; align-items: center;
+  background:
+    linear-gradient(rgba(0,0,0,.38), rgba(0,0,0,.38)),
+    url("https://raw.githubusercontent.com/JustArch1t/chat-app/main/background.jpg")
+    center/cover no-repeat fixed;
+}
+
+/* ══════════════════════════════════════
+   MAIN CONTAINER
+══════════════════════════════════════ */
+#box {
+  width: 95vw; max-width: 520px; height: 92vh;
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-border);
+  border-radius: 28px;
+  box-shadow: 0 8px 40px rgba(0,0,0,.5), inset 0 1px 0 rgba(255,255,255,.12);
+  display: flex; flex-direction: column;
+  overflow: hidden; position: relative;
+}
+
+/* ══════════════════════════════════════
+   TOP BAR
+══════════════════════════════════════ */
+#top-bar {
+  display: flex; align-items: center; gap: 10px;
+  padding: 14px 18px 12px;
+  border-bottom: 1px solid rgba(255,255,255,.1);
+  flex-shrink: 0; position: relative;
+}
+
+#top-bar .avatar-dot {
+  width: 36px; height: 36px; border-radius: 50%;
+  background: linear-gradient(135deg, #0af, #06f);
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 700; font-size: .9rem; color: #fff;
+  flex-shrink: 0; letter-spacing: .5px;
+  box-shadow: 0 2px 8px rgba(0,140,255,.4);
+}
+
+#top-bar-info { flex: 1; min-width: 0; }
+#top-bar-title {
+  color: #fff; font-weight: 600; font-size: .95rem;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+#top-bar-sub {
+  font-size: .72rem; color: var(--text-dim); margin-top: 1px;
+}
+
+.status-dot {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: #4caf50; box-shadow: 0 0 6px #4caf50;
+  display: inline-block; margin-right: 4px;
+  animation: pulse-green 2.5s infinite;
+}
+@keyframes pulse-green {
+  0%,100% { box-shadow: 0 0 4px #4caf50; }
+  50%      { box-shadow: 0 0 10px #4caf50, 0 0 18px rgba(76,175,80,.4); }
+}
+
+#search-toggle-btn {
+  background: rgba(255,255,255,.1); border: 1px solid rgba(255,255,255,.12);
+  color: #fff; border-radius: 10px; padding: 6px 10px;
+  cursor: pointer; font-size: .85rem; flex-shrink: 0;
+  transition: background var(--transition), transform .1s;
+}
+#search-toggle-btn:hover { background: rgba(255,255,255,.2); transform: scale(1.05); }
+#search-toggle-btn.active { background: rgba(0,140,255,.4); border-color: rgba(0,140,255,.5); }
+
+/* ══════════════════════════════════════
+   SEARCH BAR
+══════════════════════════════════════ */
+#search-bar {
+  display: none; padding: 8px 14px;
+  border-bottom: 1px solid rgba(255,255,255,.08);
+  flex-shrink: 0;
+}
+#search-bar.open { display: flex; gap: 8px; align-items: center; }
+#search-input {
+  flex: 1; padding: 8px 12px; border-radius: 10px;
+  background: rgba(255,255,255,.12); border: 1px solid rgba(255,255,255,.1);
+  color: #fff; outline: none; font-size: .88rem;
+}
+#search-input::placeholder { color: var(--text-dim); }
+#search-count { font-size: .75rem; color: var(--text-dim); white-space: nowrap; }
+
+/* ══════════════════════════════════════
+   MESSAGE LIST
+══════════════════════════════════════ */
+#msg-container {
+  flex: 1; overflow-y: auto;
+  display: flex; flex-direction: column; gap: 4px;
+  padding: 12px 14px 6px;
+  scroll-behavior: smooth;
+}
+#msg-container::-webkit-scrollbar { width: 4px; }
+#msg-container::-webkit-scrollbar-track { background: transparent; }
+#msg-container::-webkit-scrollbar-thumb { background: rgba(255,255,255,.18); border-radius: 10px; }
+#msg-container::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,.32); }
+
+/* ── Date separator ── */
+.date-sep {
+  text-align: center; margin: 8px 0 4px;
+  position: relative;
+}
+.date-sep span {
+  font-size: .68rem; color: var(--text-dim);
+  background: rgba(0,0,0,.3); border-radius: 20px;
+  padding: 3px 12px; display: inline-block;
+  backdrop-filter: blur(8px); border: 1px solid rgba(255,255,255,.08);
+  user-select: none;
+}
+
+/* ── Bubble wrapper ── */
+.bubble-wrapper {
+  display: flex; flex-direction: column;
+  animation: msgIn .2s cubic-bezier(.22,.68,0,1.2) both;
+  margin-bottom: 2px;
+}
+.bubble-wrapper.mine { align-items: flex-end; }
+.bubble-wrapper.highlighted .bubble {
+  outline: 2px solid rgba(255,210,0,.7);
+  outline-offset: 2px;
+}
+
+@keyframes msgIn {
+  from { opacity:0; transform: translateY(10px) scale(.97); }
+  to   { opacity:1; transform: translateY(0)   scale(1); }
+}
+
+/* ── Avatar + name row ── */
+.msg-meta {
+  display: flex; align-items: center; gap: 6px;
+  margin-bottom: 3px; padding: 0 4px;
+}
+.msg-avatar {
+  width: 22px; height: 22px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: .6rem; font-weight: 700; color: #fff;
+  flex-shrink: 0;
+}
+.bubble-wrapper.mine .msg-meta { flex-direction: row-reverse; }
+
+.msg-name {
+  font-size: .72rem; color: var(--text-dim); user-select: none;
+}
+.msg-time {
+  font-size: .65rem; color: rgba(255,255,255,.35); margin-left: 2px;
+  user-select: none; cursor: default;
+}
+
+/* ── Bubble ── */
+.bubble {
+  max-width: 82%; padding: 9px 14px;
+  border-radius: var(--radius-bubble);
+  background: rgba(255,255,255,.1);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255,255,255,.12);
+  color: var(--text); word-break: break-word; line-height: 1.5;
+  transition: transform var(--transition), box-shadow var(--transition);
+  position: relative; cursor: pointer;
+  user-select: text;
+}
+.bubble:hover { transform: translateY(-1px); box-shadow: 0 4px 16px rgba(0,0,0,.28); }
+.mine .bubble {
+  background: var(--accent);
+  border-color: var(--accent-b);
+}
+
+/* ── Reply quote inside bubble ── */
+.quoted {
+  background: rgba(255,255,255,.08); border-left: 3px solid rgba(255,255,255,.4);
+  border-radius: 8px; padding: 5px 8px; margin-bottom: 7px;
+  font-size: .78rem; color: rgba(255,255,255,.65);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.mine .quoted { border-left-color: rgba(255,255,255,.55); }
+.quoted .q-name { font-weight: 600; margin-bottom: 2px; color: rgba(255,255,255,.8); font-size: .7rem; }
+
+/* ── Link inside bubble ── */
+.bubble a {
+  color: #7ec8ff; text-decoration: underline dotted;
+  word-break: break-all;
+}
+.bubble a:hover { color: #aad8ff; }
+
+/* ── Edited tag ── */
+.edited-tag { font-size: .63rem; color: rgba(255,255,255,.35); margin-left: 5px; }
+
+/* ── Edit input inside bubble ── */
+.edit-input {
+  width: 100%; padding: 2px 2px; border: none;
+  border-bottom: 2px solid rgba(0,180,255,.8); border-radius: 4px;
+  outline: none; background: transparent; color: #fff;
+  font-size: .95rem; line-height: 1.5;
+}
+
+/* ── Controls (edit/delete/reply) ── */
+.controls {
+  display: flex; gap: 4px; margin-top: 4px;
+  opacity: 0; transition: opacity .15s; pointer-events: none;
+}
+.bubble-wrapper:hover .controls { opacity: 1; pointer-events: all; }
+.bubble-wrapper:focus-within .controls { opacity: 1; pointer-events: all; }
+
+.ctrl-btn {
+  padding: 3px 9px; font-size: .7rem; border-radius: 8px;
+  background: rgba(255,255,255,.12); color: #fff;
+  border: 1px solid rgba(255,255,255,.1); cursor: pointer;
+  transition: background var(--transition), transform .1s;
+}
+.ctrl-btn:hover { background: rgba(255,255,255,.25); transform: scale(1.05); }
+.ctrl-btn.del:hover { background: rgba(255,55,55,.45); }
+.ctrl-btn.reply-ctrl { background: rgba(255,255,255,.08); }
+
+/* ── Typing indicator ── */
+#typing-bar {
+  min-height: 22px; padding: 0 18px 4px;
+  font-size: .72rem; color: var(--text-dim);
+  flex-shrink: 0; display: flex; align-items: center; gap: 6px;
+}
+.typing-dots span {
+  display: inline-block; width: 5px; height: 5px; border-radius: 50%;
+  background: rgba(255,255,255,.5); margin: 0 1px;
+  animation: dot-bounce .9s infinite ease-in-out;
+}
+.typing-dots span:nth-child(2) { animation-delay: .15s; }
+.typing-dots span:nth-child(3) { animation-delay: .3s; }
+@keyframes dot-bounce {
+  0%,80%,100% { transform: scale(.7); opacity:.4; }
+  40%          { transform: scale(1);  opacity:1;  }
+}
+
+/* ── Reply preview above input ── */
+#reply-preview {
+  display: none; margin: 0 14px 4px;
+  background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.1);
+  border-left: 3px solid rgba(0,180,255,.7);
+  border-radius: 10px; padding: 6px 10px;
+  flex-direction: row; align-items: center; gap: 8px;
+  flex-shrink: 0;
+}
+#reply-preview.open { display: flex; }
+#reply-preview-text {
+  flex: 1; font-size: .78rem; color: rgba(255,255,255,.65);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+#reply-preview-name { font-size: .7rem; color: rgba(0,180,255,.9); margin-bottom: 2px; }
+#reply-cancel {
+  background: none; border: none; color: rgba(255,255,255,.45);
+  font-size: 1rem; cursor: pointer; flex-shrink: 0; line-height: 1;
+  transition: color var(--transition);
+}
+#reply-cancel:hover { color: #fff; }
+
+/* ══════════════════════════════════════
+   INPUT AREA
+══════════════════════════════════════ */
+#input-area {
+  display: flex; flex-direction: column; gap: 4px;
+  padding: 8px 14px 12px; flex-shrink: 0;
+  border-top: 1px solid rgba(255,255,255,.07);
+  position: relative;
+}
+
+#input-row {
+  display: flex; gap: 7px; align-items: center;
+}
+
+input[type="text"] {
+  padding: 11px 13px; border: none; outline: none;
+  border-radius: var(--radius-input);
+  background: rgba(255,255,255,.12); color: white;
+  border: 1px solid rgba(255,255,255,.08);
+  transition: background var(--transition), border-color var(--transition);
+  font-size: .9rem;
+}
+input[type="text"]:focus {
+  background: rgba(255,255,255,.18);
+  border-color: rgba(255,255,255,.22);
+}
+input[type="text"]::placeholder { color: rgba(255,255,255,.42); }
+
+#name { width: 95px; flex-shrink: 0; font-size: .82rem; }
+#text { flex: 1; min-width: 0; }
+
+/* ── Icon buttons ── */
+.icon-btn {
+  border: none; cursor: pointer;
+  padding: 10px 12px; border-radius: 12px;
+  background: rgba(255,255,255,.16); color: white;
+  font-size: .95rem; flex-shrink: 0;
+  transition: background var(--transition), transform .1s;
+  line-height: 1; display: flex; align-items: center; justify-content: center;
+}
+.icon-btn:hover { background: rgba(255,255,255,.28); transform: scale(1.07); }
+.icon-btn:active { transform: scale(.94); }
+.icon-btn:disabled { opacity: .3; cursor: not-allowed; transform: none !important; }
+
+#sendBtn {
+  background: rgba(0,140,255,.48);
+  border: 1px solid rgba(0,140,255,.35);
+  padding: 10px 15px;
+}
+#sendBtn:hover:not(:disabled) { background: rgba(0,140,255,.7); }
+
+/* ── Char counter ── */
+#char-counter {
+  font-size: .67rem; color: rgba(255,255,255,.35);
+  text-align: right; padding-right: 2px; min-height: 14px;
+  transition: color .2s;
+}
+#char-counter.warn { color: #ffb347; }
+#char-counter.over { color: #ff5555; }
+
+/* ══════════════════════════════════════
+   EMOJI POPUP
+══════════════════════════════════════ */
+#emoji-popup {
+  display: none; position: absolute;
+  bottom: calc(100% + 8px); left: 0;
+  background: rgba(22,22,28,.96); backdrop-filter: blur(16px);
+  border: 1px solid rgba(255,255,255,.14);
+  border-radius: 18px; padding: 10px;
+  z-index: 999; box-shadow: 0 8px 32px rgba(0,0,0,.55);
+  flex-direction: column; gap: 6px;
+  animation: popUp .15s cubic-bezier(.22,.68,0,1.2);
+}
+#emoji-popup.open { display: flex; }
+@keyframes popUp {
+  from { opacity:0; transform: scale(.92) translateY(6px); }
+  to   { opacity:1; transform: scale(1)   translateY(0); }
+}
+
+#emoji-search {
+  padding: 7px 10px; border-radius: 10px;
+  background: rgba(255,255,255,.1); border: 1px solid rgba(255,255,255,.1);
+  color: #fff; outline: none; font-size: .82rem; width: 100%;
+}
+#emoji-search::placeholder { color: rgba(255,255,255,.4); }
+
+#emoji-tabs {
+  display: flex; gap: 4px; flex-wrap: wrap;
+}
+.emoji-tab {
+  background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.08);
+  border-radius: 8px; padding: 3px 8px; cursor: pointer;
+  font-size: .7rem; color: rgba(255,255,255,.65);
+  transition: background .12s;
+}
+.emoji-tab:hover, .emoji-tab.active { background: rgba(0,140,255,.35); color: #fff; }
+
+#emoji-grid {
+  display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px;
+  max-height: 160px; overflow-y: auto;
+}
+#emoji-grid::-webkit-scrollbar { width: 3px; }
+#emoji-grid::-webkit-scrollbar-thumb { background: rgba(255,255,255,.2); border-radius: 4px; }
+
+#emoji-grid span {
+  cursor: pointer; font-size: 20px; border-radius: 8px; padding: 5px;
+  display: flex; align-items: center; justify-content: center;
+  transition: background .1s, transform .1s; user-select: none;
+}
+#emoji-grid span:hover { background: rgba(255,255,255,.15); transform: scale(1.25); }
+
+/* Recently used row */
+#emoji-recents { display: flex; gap: 4px; flex-wrap: wrap; }
+#emoji-recents span {
+  cursor: pointer; font-size: 20px; border-radius: 8px; padding: 5px;
+  transition: background .1s, transform .1s; user-select: none;
+  display: flex; align-items: center; justify-content: center;
+}
+#emoji-recents span:hover { background: rgba(255,255,255,.15); transform: scale(1.25); }
+#recents-label { font-size: .65rem; color: rgba(255,255,255,.35); text-transform: uppercase; letter-spacing:.05em; }
+
+/* ══════════════════════════════════════
+   SCROLL-TO-BOTTOM
+══════════════════════════════════════ */
+#scroll-btn {
+  display: none; position: absolute;
+  bottom: 90px; right: 18px;
+  background: rgba(0,140,255,.65); border: none; border-radius: 50%;
+  width: 38px; height: 38px; font-size: 17px; color: #fff;
+  cursor: pointer; box-shadow: 0 4px 14px rgba(0,0,0,.4);
+  z-index: 10; transition: transform .15s, opacity .2s;
+  align-items: center; justify-content: center;
+}
+#scroll-btn.visible { display: flex; }
+#scroll-btn:hover { transform: scale(1.1); }
+
+#scroll-btn .unread-badge {
+  position: absolute; top: -5px; right: -5px;
+  background: #ff4444; color: #fff; font-size: .6rem;
+  border-radius: 10px; padding: 1px 5px; min-width: 18px;
+  text-align: center; font-weight: 700; display: none;
+}
+#scroll-btn .unread-badge.show { display: block; }
+
+/* ══════════════════════════════════════
+   TOASTS
+══════════════════════════════════════ */
+#toast-container {
+  position: fixed; top: 18px; left: 50%; transform: translateX(-50%);
+  display: flex; flex-direction: column; gap: 8px;
+  z-index: 9999; pointer-events: none;
+  width: min(90vw, 340px);
+}
+.toast {
+  background: rgba(28,28,36,.95); backdrop-filter: blur(12px);
+  border: 1px solid rgba(255,255,255,.15); border-radius: 12px;
+  padding: 10px 16px; color: #fff; font-size: .85rem;
+  display: flex; align-items: center; gap: 10px;
+  animation: toastIn .22s cubic-bezier(.22,.68,0,1.2);
+  box-shadow: 0 6px 24px rgba(0,0,0,.45);
+}
+.toast.out { animation: toastOut .2s ease forwards; }
+.toast-icon { font-size: 1.1rem; flex-shrink: 0; }
+@keyframes toastIn  { from{opacity:0;transform:translateY(-12px) scale(.95)} to{opacity:1;transform:none} }
+@keyframes toastOut { to  {opacity:0;transform:translateY(-8px) scale(.95)} }
+
+/* ══════════════════════════════════════
+   MODAL (replace confirm)
+══════════════════════════════════════ */
+#modal-overlay {
+  display: none; position: fixed; inset: 0;
+  background: rgba(0,0,0,.6); backdrop-filter: blur(6px);
+  z-index: 9998; align-items: center; justify-content: center;
+}
+#modal-overlay.open { display: flex; }
+#modal-box {
+  background: rgba(28,28,36,.97); border: 1px solid rgba(255,255,255,.15);
+  border-radius: 20px; padding: 24px 26px;
+  width: min(88vw, 340px); color: #fff;
+  box-shadow: 0 12px 40px rgba(0,0,0,.6);
+  animation: popUp .18s cubic-bezier(.22,.68,0,1.2);
+}
+#modal-title  { font-size: 1rem; font-weight: 600; margin-bottom: 8px; }
+#modal-body   { font-size: .85rem; color: var(--text-dim); margin-bottom: 20px; line-height:1.5; }
+#modal-actions { display: flex; gap: 8px; justify-content: flex-end; }
+.modal-btn {
+  padding: 8px 18px; border-radius: 11px; border: none;
+  cursor: pointer; font-size: .85rem; font-weight: 600;
+  transition: background var(--transition), transform .1s;
+}
+.modal-btn:active { transform: scale(.96); }
+#modal-cancel { background: rgba(255,255,255,.12); color: #fff; }
+#modal-cancel:hover { background: rgba(255,255,255,.22); }
+#modal-confirm { background: rgba(0,140,255,.6); color: #fff; }
+#modal-confirm:hover { background: rgba(0,140,255,.85); }
+#modal-confirm.danger { background: rgba(220,40,40,.6); }
+#modal-confirm.danger:hover { background: rgba(220,40,40,.9); }
+
+/* ══════════════════════════════════════
+   HIGHLIGHT (search match)
+══════════════════════════════════════ */
+mark.search-hl {
+  background: rgba(255,210,0,.45); color: #fff;
+  border-radius: 3px; padding: 0 2px;
+}
+
+/* ══════════════════════════════════════
+   SWIPE HINT (mobile)
+══════════════════════════════════════ */
+.bubble-wrapper { touch-action: pan-y; }
+</style>
+</head>
+<body>
+
+<!-- ── Toast container ── -->
+<div id="toast-container"></div>
+
+<!-- ── Modal ── -->
+<div id="modal-overlay">
+  <div id="modal-box">
+    <div id="modal-title"></div>
+    <div id="modal-body"></div>
+    <div id="modal-actions">
+      <button class="modal-btn" id="modal-cancel">Cancel</button>
+      <button class="modal-btn" id="modal-confirm">Confirm</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── Main box ── -->
+<div id="box">
+
+  <!-- Top bar -->
+  <div id="top-bar">
+    <div class="avatar-dot" id="my-avatar">?</div>
+    <div id="top-bar-info">
+      <div id="top-bar-title">Glass Chat</div>
+      <div id="top-bar-sub"><span class="status-dot"></span><span id="online-count">connecting…</span></div>
+    </div>
+    <button class="icon-btn" id="search-toggle-btn" title="Search messages (Ctrl+F)">🔍</button>
+  </div>
+
+  <!-- Search bar -->
+  <div id="search-bar">
+    <input type="text" id="search-input" placeholder="Search messages…" autocomplete="off">
+    <span id="search-count"></span>
+  </div>
+
+  <!-- Messages -->
+  <div id="msg-container"></div>
+
+  <!-- Typing indicator -->
+  <div id="typing-bar"></div>
+
+  <!-- Reply preview -->
+  <div id="reply-preview">
+    <div style="flex:1;min-width:0">
+      <div id="reply-preview-name"></div>
+      <div id="reply-preview-text"></div>
+    </div>
+    <button id="reply-cancel" title="Cancel reply">✕</button>
+  </div>
+
+  <!-- Input area -->
+  <div id="input-area">
+    <div id="emoji-popup">
+      <div id="recents-label" style="display:none">Recently used</div>
+      <div id="emoji-recents" style="display:none"></div>
+      <input type="text" id="emoji-search" placeholder="Search emoji…" autocomplete="off">
+      <div id="emoji-tabs"></div>
+      <div id="emoji-grid"></div>
+    </div>
+
+    <div id="input-row">
+      <input type="text" id="name" placeholder="Name" maxlength="20" autocomplete="off" spellcheck="false">
+      <button class="icon-btn" id="emojiBtn" title="Emoji (Alt+E)">😊</button>
+      <input type="text" id="text" placeholder="Message… (Enter to send)" maxlength="500" autocomplete="off">
+      <button class="icon-btn" id="sendBtn" title="Send (Enter)" disabled>➤</button>
+    </div>
+    <div id="char-counter"></div>
+  </div>
+</div>
+
+<!-- Scroll-to-bottom -->
+<button id="scroll-btn" title="Scroll to bottom">
+  ↓<span class="unread-badge" id="unread-badge"></span>
+</button>
+
+<script>
+/* ══════════════════════════════════════════════════════
+   FIREBASE INIT
+══════════════════════════════════════════════════════ */
+firebase.initializeApp({
+  apiKey:"AIzaSyBXjcr21ZUrF5ty2JKH4BuaLqjHaqHitD8",
+  authDomain:"chat-room-e8152.firebaseapp.com",
+  databaseURL:"https://chat-room-e8152-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId:"chat-room-e8152",
+  storageBucket:"chat-room-e8152.firebasestorage.app",
+  messagingSenderId:"875122406489",
+  appId:"1:875122406489:web:c0f66c7a7903b9e87eed48"
+});
+
+const db         = firebase.database().ref("messages");
+const typingRef  = firebase.database().ref("typing");
+const presenceRef= firebase.database().ref("presence");
+
+/* ══════════════════════════════════════════════════════
+   DOM REFS
+══════════════════════════════════════════════════════ */
+const msgList       = document.getElementById("msg-container");
+const textInput     = document.getElementById("text");
+const nameInput     = document.getElementById("name");
+const sendBtn       = document.getElementById("sendBtn");
+const charCounter   = document.getElementById("char-counter");
+const scrollBtn     = document.getElementById("scroll-btn");
+const emojiPopup    = document.getElementById("emoji-popup");
+const emojiGrid     = document.getElementById("emoji-grid");
+const emojiSearch   = document.getElementById("emoji-search");
+const emojiTabs     = document.getElementById("emoji-tabs");
+const emojiRecents  = document.getElementById("emoji-recents");
+const recentsLabel  = document.getElementById("recents-label");
+const replyPreview  = document.getElementById("reply-preview");
+const replyPrevName = document.getElementById("reply-preview-name");
+const replyPrevText = document.getElementById("reply-preview-text");
+const typingBar     = document.getElementById("typing-bar");
+const onlineCount   = document.getElementById("online-count");
+const searchBar     = document.getElementById("search-bar");
+const searchInput   = document.getElementById("search-input");
+const searchCount   = document.getElementById("search-count");
+const unreadBadge   = document.getElementById("unread-badge");
+const myAvatar      = document.getElementById("my-avatar");
+const topBarTitle   = document.getElementById("top-bar-title");
+
+/* ══════════════════════════════════════════════════════
+   CONSTANTS & STATE
+══════════════════════════════════════════════════════ */
+const MAX_LEN = 500;
+let activeEditInput  = null;
+let activeEditKey    = null;
+let replyTarget      = null;   // { key, user, text }
+let unreadCount      = 0;
+let windowFocused    = true;
+let initialLoad      = true;
+let typingTimer      = null;
+let myPresenceKey    = null;
+const msgCache       = {};
+let recentEmojis     = JSON.parse(localStorage.getItem("recentEmojis") || "[]");
+
+const EMOJI_CATS = {
+  "😊 Smileys": ["😀","😃","😄","😁","😆","😅","🤣","😂","🙂","😉","😊","😇","🥹","😍","🤩","😘","😎","🥳","😏","😒","😞","😔","😟","😕","🙁","😣","😖","😫","😩","😤","😠","😡","🤬","😈","👿","💀","☠️","💩","🤡","👹","👺","👻","👽","🤖"],
+  "👋 People":  ["👋","🤚","🖐","✋","🤙","👌","🤌","✌️","🤞","🤟","🤘","👈","👉","👆","👇","☝️","👍","👎","✊","👊","🤛","🤜","👏","🙌","🫶","🤝","🙏","✍️","💪","🦾","🦵","🦶","👀","👁","👂","🫀","🫁","🧠","🦷"],
+  "❤️ Hearts":  ["❤️","🧡","💛","💚","💙","💜","🖤","🤍","🤎","💔","❤️‍🔥","❤️‍🩹","💕","💞","💓","💗","💖","💘","💝","💟","☮️","✝️","☯️","🕉️","☸️","🔯","🪬","🧿"],
+  "🎉 Fun":     ["🎉","🎊","🎈","🎁","🎀","🎗","🎟","🎫","🏆","🥇","🥈","🥉","🏅","🎖","🎪","🤹","🎭","🎨","🎬","🎤","🎧","🎼","🎵","🎶","🎸","🥁","🎹","🎺","🎻","🪕","🪗","🪘","🎯","🎱","🎮","🕹","🎲","🧩","🃏","🀄"],
+  "🔥 Hype":    ["🔥","⚡","💥","✨","🌟","⭐","🌠","🌌","🌈","☄️","🌊","🌪","🌀","❄️","💎","👑","🏹","⚔️","🛡","🗡","💣","🧨","🪄","🔮","🧲","🔑","🗝","🔐","🔒","🔓","🚀","🛸","🌍","🌙","☀️","🌙"],
+  "🐶 Animals": ["🐶","🐱","🐭","🐹","🐰","🦊","🐻","🐼","🐨","🐯","🦁","🐮","🐷","🐸","🐵","🙈","🙉","🙊","🐔","🐧","🐦","🐤","🦆","🦅","🦉","🦇","🐺","🐗","🐴","🦄","🐝","🪱","🐛","🦋","🐌","🐞","🐜","🦟","🦗","🕷","🦂","🐢","🐍","🦎","🦖","🦕","🐙","🦑","🦐","🦞","🦀","🐡","🐠","🐟","🐬","🐳","🐋","🦈","🐊","🐅","🐆","🦓","🦍","🦧","🦣","🐘","🦛","🦏","🐪","🐫","🦒","🦘","🦬","🐃","🐂","🐄","🐎","🐖","🐏","🐑","🦙","🐐","🦌","🐕","🐩","🦮","🐕‍🦺","🐈","🐈‍⬛","🐓","🦃","🦤","🦚","🦜","🦢","🦩","🕊","🐇","🦝","🦨","🦡","🦫","🦦","🦥","🐁","🐀","🐿","🦔"],
+  "🍕 Food":    ["🍎","🍐","🍊","🍋","🍌","🍉","🍇","🍓","🫐","🍈","🍒","🍑","🥭","🍍","🥥","🥝","🍅","🍆","🥑","🫑","🥦","🥬","🥒","🌶","🫒","🧄","🧅","🥔","🍠","🥐","🥯","🍞","🥖","🥨","🧀","🥚","🍳","🧈","🥞","🧇","🥓","🥩","🍗","🍖","🌭","🍔","🍟","🍕","🫓","🥪","🥙","🧆","🌮","🌯","🫔","🥗","🥘","🫕","🥫","🍝","🍜","🍲","🍛","🍣","🍱","🥟","🦪","🍤","🍙","🍚","🍘","🍥","🥮","🍢","🧁","🍰","🎂","🍮","🍭","🍬","🍫","🍿","🍩","🍪","🌰","🥜","🍯","🧃","🥤","🧋","🍵","☕","🫖","🍺","🍻","🥂","🍷","🥃","🍸","🍹","🧉","🍾","🧊"],
+};
+
+/* ══════════════════════════════════════════════════════
+   UTILITY FUNCTIONS
+══════════════════════════════════════════════════════ */
+function esc(s){
+  const d=document.createElement("div"); d.textContent=s; return d.innerHTML;
+}
+
+function myName(){ return nameInput.value.trim() || "Anon"; }
+
+function isNearBottom(){
+  return msgList.scrollHeight - msgList.scrollTop - msgList.clientHeight < 130;
+}
+
+function scrollToBottom(force){
+  if(force || isNearBottom())
+    msgList.scrollTo({ top: msgList.scrollHeight, behavior:"smooth" });
+}
+
+/* ── User color from name ── */
+function userColor(name){
+  const colors = ["#e74c7a","#e77e3c","#d4ac0d","#27ae60","#2980b9","#8e44ad","#16a085","#c0392b","#1a9cc7","#7d3cad"];
+  let h=0; for(let c of name) h=(h*31+c.charCodeAt(0))%colors.length;
+  return colors[Math.abs(h)%colors.length];
+}
+
+function userInitials(name){
+  const parts = name.trim().split(/\s+/);
+  return parts.length>1 ? (parts[0][0]+parts[parts.length-1][0]).toUpperCase()
+                        : name.slice(0,2).toUpperCase();
+}
+
+/* ── Relative time ── */
+function relTime(ts){
+  const diff = Date.now() - ts;
+  if(diff < 60000)  return "just now";
+  if(diff < 3600000) return Math.floor(diff/60000) + "m ago";
+  if(diff < 86400000) return Math.floor(diff/3600000) + "h ago";
+  return new Date(ts).toLocaleDateString([],{month:"short",day:"numeric"});
+}
+
+/* ── Auto-linkify ── */
+function linkify(text){
+  return text.replace(/(https?:\/\/[^\s<>"']+)/gi,
+    u=>`<a href="${esc(u)}" target="_blank" rel="noopener noreferrer">${esc(u)}</a>`);
+}
+
+/* ── Date label ── */
+function dateLabel(ts){
+  const d = new Date(ts), t = new Date();
+  const y=d.getFullYear(), m=d.getMonth(), day=d.getDate();
+  if(y===t.getFullYear()&&m===t.getMonth()&&day===t.getDate()) return "Today";
+  const yest=new Date(t); yest.setDate(t.getDate()-1);
+  if(y===yest.getFullYear()&&m===yest.getMonth()&&day===yest.getDate()) return "Yesterday";
+  return d.toLocaleDateString([],{weekday:"long",month:"short",day:"numeric"});
+}
+
+/* ══════════════════════════════════════════════════════
+   TOAST SYSTEM
+══════════════════════════════════════════════════════ */
+const toastContainer = document.getElementById("toast-container");
+
+function showToast(msg, icon="✅", duration=2400){
+  const el = document.createElement("div");
+  el.className = "toast";
+  el.innerHTML = `<span class="toast-icon">${icon}</span><span>${msg}</span>`;
+  toastContainer.appendChild(el);
+  setTimeout(()=>{
+    el.classList.add("out");
+    el.addEventListener("animationend", ()=> el.remove(), {once:true});
+  }, duration);
+}
+
+/* ══════════════════════════════════════════════════════
+   MODAL SYSTEM (replaces confirm())
+══════════════════════════════════════════════════════ */
+const modalOverlay = document.getElementById("modal-overlay");
+const modalTitle   = document.getElementById("modal-title");
+const modalBody    = document.getElementById("modal-body");
+const modalConfirm = document.getElementById("modal-confirm");
+const modalCancel  = document.getElementById("modal-cancel");
+let modalResolve   = null;
+
+function showModal({ title, body, confirmText="Confirm", danger=false }){
+  return new Promise(resolve=>{
+    modalTitle.textContent   = title;
+    modalBody.textContent    = body;
+    modalConfirm.textContent = confirmText;
+    modalConfirm.className   = "modal-btn" + (danger?" danger":"");
+    modalResolve = resolve;
+    modalOverlay.classList.add("open");
+    modalConfirm.focus();
+  });
+}
+
+modalConfirm.addEventListener("click",()=>{ modalOverlay.classList.remove("open"); if(modalResolve) modalResolve(true); });
+modalCancel.addEventListener("click",()=>{  modalOverlay.classList.remove("open"); if(modalResolve) modalResolve(false); });
+modalOverlay.addEventListener("click", e=>{ if(e.target===modalOverlay){ modalOverlay.classList.remove("open"); if(modalResolve) modalResolve(false); } });
+document.addEventListener("keydown", e=>{ if(e.key==="Escape" && modalOverlay.classList.contains("open")){ modalOverlay.classList.remove("open"); if(modalResolve) modalResolve(false); } });
+
+/* ══════════════════════════════════════════════════════
+   NAME & AVATAR
+══════════════════════════════════════════════════════ */
+nameInput.value = localStorage.getItem("chatName") || ("User-"+Math.floor(Math.random()*1000));
+
+function updateAvatar(){
+  const n = myName();
+  myAvatar.textContent = userInitials(n);
+  myAvatar.style.background = `linear-gradient(135deg, ${userColor(n)}, ${userColor(n+"x")})`;
+  topBarTitle.textContent = "Glass Chat · " + n;
+}
+updateAvatar();
+
+nameInput.addEventListener("input",()=>{
+  const v = nameInput.value.trim();
+  if(v) localStorage.setItem("chatName", v);
+  updateAvatar();
+  // Re-render ownership
+  document.querySelectorAll(".bubble-wrapper").forEach(w=>{
+    const h = w.querySelector(".msg-meta [data-user]");
+    if(!h) return;
+    const isMe = h.dataset.user === myName();
+    w.classList.toggle("mine", isMe);
+    const ctrl = w.querySelector(".controls");
+    if(ctrl){
+      const editB = ctrl.querySelector(".edit-btn");
+      const delB  = ctrl.querySelector(".del-btn");
+      ctrl.style.display = isMe ? "" : "none";
+    }
+  });
+});
+
+nameInput.addEventListener("keydown", e=>{ if(e.key==="Enter") textInput.focus(); });
+
+/* ══════════════════════════════════════════════════════
+   PRESENCE / ONLINE COUNT
+══════════════════════════════════════════════════════ */
+(function setupPresence(){
+  const connRef = firebase.database().ref(".info/connected");
+  connRef.on("value", snap=>{
+    if(!snap.val()) return;
+    const me = presenceRef.push();
+    myPresenceKey = me.key;
+    me.set({ name: myName(), t: Date.now() });
+    me.onDisconnect().remove();
+  });
+
+  presenceRef.on("value", snap=>{
+    const count = snap.numChildren();
+    onlineCount.textContent = count + " online";
+  });
+})();
+
+/* ══════════════════════════════════════════════════════
+   TYPING INDICATOR
+══════════════════════════════════════════════════════ */
+function sendTyping(active){
+  if(!myPresenceKey) return;
+  if(active){
+    typingRef.child(myPresenceKey).set({ name: myName(), t: Date.now() });
+  } else {
+    typingRef.child(myPresenceKey).remove();
+  }
+}
+
+textInput.addEventListener("input",()=>{
+  clearTimeout(typingTimer);
+  sendTyping(true);
+  typingTimer = setTimeout(()=> sendTyping(false), 2500);
+});
+
+typingRef.on("value", snap=>{
+  const typers = [];
+  snap.forEach(c=>{ if(c.val().name !== myName()) typers.push(c.val().name); });
+  if(typers.length===0){ typingBar.innerHTML=""; return; }
+  const names = typers.slice(0,2).map(n=>`<b>${esc(n)}</b>`).join(", ");
+  const verb  = typers.length===1 ? "is" : "are";
+  typingBar.innerHTML = `${names} ${verb} typing <span class="typing-dots"><span></span><span></span><span></span></span>`;
+});
+
+/* ══════════════════════════════════════════════════════
+   EMOJI PICKER
+══════════════════════════════════════════════════════ */
+let allEmojisFlat = [];
+Object.values(EMOJI_CATS).forEach(arr=> allEmojisFlat.push(...arr));
+
+function buildEmojiPicker(){
+  // Tabs
+  Object.keys(EMOJI_CATS).forEach((cat, i)=>{
+    const tab = document.createElement("button");
+    tab.className = "emoji-tab" + (i===0?" active":"");
+    tab.textContent = cat.split(" ")[0];
+    tab.title = cat;
+    tab.addEventListener("click",()=>{
+      document.querySelectorAll(".emoji-tab").forEach(t=> t.classList.remove("active"));
+      tab.classList.add("active");
+      emojiSearch.value = "";
+      renderEmojiGrid(EMOJI_CATS[cat]);
+    });
+    emojiTabs.appendChild(tab);
+  });
+  renderEmojiGrid(EMOJI_CATS[Object.keys(EMOJI_CATS)[0]]);
+  renderRecents();
+}
+
+function renderEmojiGrid(list){
+  emojiGrid.innerHTML = "";
+  list.forEach(em=>{
+    const span = document.createElement("span");
+    span.textContent = em;
+    span.addEventListener("mousedown", e=> e.preventDefault());
+    span.addEventListener("click",()=> pickEmoji(em));
+    emojiGrid.appendChild(span);
+  });
+}
+
+function renderRecents(){
+  emojiRecents.innerHTML="";
+  if(!recentEmojis.length){ recentsLabel.style.display="none"; emojiRecents.style.display="none"; return; }
+  recentsLabel.style.display="";
+  emojiRecents.style.display="flex";
+  recentEmojis.slice(0,14).forEach(em=>{
+    const span = document.createElement("span");
+    span.textContent = em;
+    span.addEventListener("mousedown", e=> e.preventDefault());
+    span.addEventListener("click",()=> pickEmoji(em));
+    emojiRecents.appendChild(span);
+  });
+}
+
+function pickEmoji(em){
+  insertAtCursor(activeEditInput || textInput, em);
+  (activeEditInput || textInput).focus();
+  // Track recents
+  recentEmojis = [em, ...recentEmojis.filter(e=>e!==em)].slice(0,14);
+  localStorage.setItem("recentEmojis", JSON.stringify(recentEmojis));
+  renderRecents();
+}
+
+emojiSearch.addEventListener("input",()=>{
+  const q = emojiSearch.value.trim().toLowerCase();
+  if(!q){ renderEmojiGrid(EMOJI_CATS[Object.keys(EMOJI_CATS)[0]]); return; }
+  const results = allEmojisFlat.filter(e=>{
+    // Simple name-based search via codepoint description isn't feasible in vanilla;
+    // just filter emojis whose unicode name includes the query — fallback: show all
+    return true; // we'll rely on visual browsing; search filters by emoji itself
+  });
+  // Actually filter by typing the emoji directly or show first 42 matching
+  const direct = allEmojisFlat.filter(e=> e.includes(q));
+  renderEmojiGrid(direct.length ? direct : allEmojisFlat.slice(0,42));
+});
+
+emojiSearch.addEventListener("mousedown", e=> e.stopPropagation());
+emojiSearch.addEventListener("keydown", e=> e.stopPropagation());
+
+buildEmojiPicker();
+
+document.getElementById("emojiBtn").addEventListener("click", e=>{
+  e.stopPropagation();
+  emojiPopup.classList.toggle("open");
+  if(emojiPopup.classList.contains("open")) emojiSearch.focus();
+});
+
+document.addEventListener("click", e=>{
+  if(!emojiPopup.contains(e.target) && e.target.id!=="emojiBtn")
+    emojiPopup.classList.remove("open");
+});
+
+document.addEventListener("keydown", e=>{
+  if(e.key==="Escape") emojiPopup.classList.remove("open");
+  if((e.altKey||e.metaKey) && e.key.toLowerCase()==="e"){
+    e.preventDefault();
+    emojiPopup.classList.toggle("open");
+    if(emojiPopup.classList.contains("open")) emojiSearch.focus();
+  }
+  if((e.ctrlKey||e.metaKey) && e.key.toLowerCase()==="f"){
+    e.preventDefault();
+    toggleSearch();
+  }
+});
+
+/* ══════════════════════════════════════════════════════
+   INSERT AT CURSOR
+══════════════════════════════════════════════════════ */
+function insertAtCursor(el, text){
+  const s = el.selectionStart ?? el.value.length;
+  const e = el.selectionEnd   ?? el.value.length;
+  el.value = el.value.slice(0,s)+text+el.value.slice(e);
+  const p = s+text.length;
+  el.setSelectionRange(p,p);
+  el.dispatchEvent(new Event("input"));
+}
+
+/* ══════════════════════════════════════════════════════
+   CHAR COUNTER & SEND BUTTON
+══════════════════════════════════════════════════════ */
+textInput.addEventListener("input",()=>{
+  const len  = textInput.value.length;
+  const left = MAX_LEN - len;
+  sendBtn.disabled = len === 0;
+  // Save draft
+  localStorage.setItem("chatDraft", textInput.value);
+  if(left<=50){
+    charCounter.textContent = left+" left";
+    charCounter.className   = left<=10?"over":"warn";
+  } else {
+    charCounter.textContent=""; charCounter.className="";
+  }
+});
+
+// Restore draft
+const draft = localStorage.getItem("chatDraft");
+if(draft){ textInput.value=draft; sendBtn.disabled=!draft.trim(); textInput.dispatchEvent(new Event("input")); }
+
+/* ══════════════════════════════════════════════════════
+   REPLY SYSTEM
+══════════════════════════════════════════════════════ */
+function setReply(key, user, text){
+  replyTarget = { key, user, text };
+  replyPrevName.textContent = "↩ Replying to " + user;
+  replyPrevText.textContent = text.length>80 ? text.slice(0,80)+"…" : text;
+  replyPreview.classList.add("open");
+  textInput.focus();
+}
+
+function clearReply(){
+  replyTarget = null;
+  replyPreview.classList.remove("open");
+}
+
+document.getElementById("reply-cancel").addEventListener("click", clearReply);
+
+/* ══════════════════════════════════════════════════════
+   SEND
+══════════════════════════════════════════════════════ */
+function send(){
+  const text = textInput.value.trim();
+  if(!text || text.length>MAX_LEN) return;
+
+  const payload = {
+    user:   myName(),
+    text:   text,
+    time:   Date.now(),
+    edited: false
+  };
+  if(replyTarget){ payload.replyTo = replyTarget; }
+
+  db.push(payload);
+
+  textInput.value = "";
+  sendBtn.disabled = true;
+  charCounter.textContent=""; charCounter.className="";
+  emojiPopup.classList.remove("open");
+  localStorage.removeItem("chatDraft");
+  clearReply();
+  sendTyping(false);
+  clearTimeout(typingTimer);
+  scrollToBottom(true);
+}
+
+sendBtn.addEventListener("click", send);
+textInput.addEventListener("keydown", e=>{
+  if(e.key==="Enter" && !e.shiftKey) send();
+});
+
+/* ══════════════════════════════════════════════════════
+   CLEAR ALL
+══════════════════════════════════════════════════════ */
+// (Moved to long-press / keyboard shortcut — no button cluttering UI)
+// Reachable via Ctrl+Shift+Delete
+document.addEventListener("keydown", async e=>{
+  if(e.ctrlKey && e.shiftKey && e.key==="Delete"){
+    const ok = await showModal({ title:"Clear chat", body:"Delete ALL messages for everyone? This cannot be undone.", confirmText:"Delete all", danger:true });
+    if(ok) db.remove();
+  }
+});
+
+/* ══════════════════════════════════════════════════════
+   SCROLL TO BOTTOM BUTTON
+══════════════════════════════════════════════════════ */
+msgList.addEventListener("scroll",()=>{
+  const away = !isNearBottom();
+  scrollBtn.classList.toggle("visible", away);
+  if(!away){ unreadCount=0; unreadBadge.textContent=""; unreadBadge.classList.remove("show"); }
+});
+scrollBtn.addEventListener("click",()=>{
+  scrollToBottom(true);
+  unreadCount=0; unreadBadge.textContent=""; unreadBadge.classList.remove("show");
+});
+
+/* ══════════════════════════════════════════════════════
+   WINDOW FOCUS / UNREAD / TAB TITLE
+══════════════════════════════════════════════════════ */
+window.addEventListener("focus",()=>{
+  windowFocused=true;
+  unreadCount=0;
+  document.title="Glass Chat";
+  unreadBadge.textContent=""; unreadBadge.classList.remove("show");
+});
+window.addEventListener("blur",()=>{ windowFocused=false; });
+
+function bumpUnread(){
+  if(windowFocused && isNearBottom()) return;
+  unreadCount++;
+  document.title=`(${unreadCount}) Glass Chat`;
+  unreadBadge.textContent=unreadCount>9?"9+":unreadCount;
+  unreadBadge.classList.add("show");
+}
+
+/* ══════════════════════════════════════════════════════
+   NOTIFICATION
+══════════════════════════════════════════════════════ */
+if(Notification && Notification.permission==="default") Notification.requestPermission();
+
+function pushNotification(user, text){
+  if(!windowFocused && Notification && Notification.permission==="granted"){
+    new Notification("Glass Chat — "+user, { body: text, icon:"🗨" });
+  }
+}
+
+/* ══════════════════════════════════════════════════════
+   SEARCH
+══════════════════════════════════════════════════════ */
+let searchActive = false;
+let searchQuery  = "";
+const searchToggleBtn = document.getElementById("search-toggle-btn");
+
+function toggleSearch(){
+  searchActive = !searchActive;
+  searchBar.classList.toggle("open", searchActive);
+  searchToggleBtn.classList.toggle("active", searchActive);
+  if(searchActive){ searchInput.focus(); }
+  else { searchInput.value=""; applySearch(""); }
+}
+
+searchToggleBtn.addEventListener("click", toggleSearch);
+
+searchInput.addEventListener("input",()=> applySearch(searchInput.value.trim()));
+
+function applySearch(q){
+  searchQuery = q.toLowerCase();
+  let count=0;
+  document.querySelectorAll(".bubble-wrapper").forEach(w=>{
+    const contentEl = w.querySelector(".content");
+    if(!contentEl) return;
+    if(!searchQuery){ contentEl.innerHTML = renderContent(msgCache[w.dataset.key]); w.classList.remove("highlighted"); return; }
+    const raw = msgCache[w.dataset.key]?.text || "";
+    const idx = raw.toLowerCase().indexOf(searchQuery);
+    if(idx===-1){ w.style.opacity=".35"; w.classList.remove("highlighted"); return; }
+    w.style.opacity="";
+    w.classList.add("highlighted");
+    count++;
+    // Highlight
+    const before  = esc(raw.slice(0,idx));
+    const match   = esc(raw.slice(idx,idx+searchQuery.length));
+    const after    = esc(raw.slice(idx+searchQuery.length));
+    contentEl.innerHTML = linkify(before + `<mark class="search-hl">${match}</mark>` + after)
+      + (msgCache[w.dataset.key]?.edited ? `<span class="edited-tag">(edited)</span>`:"");
+  });
+  searchCount.textContent = searchQuery ? count+" match"+(count!==1?"es":"") : "";
+  // Scroll first match into view
+  const first = document.querySelector(".bubble-wrapper.highlighted");
+  if(first) first.scrollIntoView({ behavior:"smooth", block:"center" });
+}
+
+/* ══════════════════════════════════════════════════════
+   DATE SEPARATORS
+══════════════════════════════════════════════════════ */
+let lastDateLabel = "";
+function getOrInsertDateSep(ts){
+  const label = dateLabel(ts);
+  if(label===lastDateLabel) return;
+  lastDateLabel=label;
+  const sep = document.createElement("div");
+  sep.className="date-sep";
+  sep.innerHTML=`<span>${label}</span>`;
+  msgList.appendChild(sep);
+}
+
+/* ══════════════════════════════════════════════════════
+   RENDER CONTENT (linkify + edited tag)
+══════════════════════════════════════════════════════ */
+function renderContent(data){
+  if(!data) return "";
+  return linkify(esc(data.text)) + (data.edited ? `<span class="edited-tag">(edited)</span>` : "");
+}
+
+/* ══════════════════════════════════════════════════════
+   RENDER MESSAGE
+══════════════════════════════════════════════════════ */
+function renderMessage(key, data, append){
+  const isMe  = data.user === myName();
+  const color = userColor(data.user);
+  const inits = userInitials(data.user);
+  const time  = new Date(data.time||Date.now()).toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"});
+  const fullTime = new Date(data.time||Date.now()).toLocaleString([],{dateStyle:"medium",timeStyle:"short"});
+
+  let wrapper = document.querySelector(`[data-key="${key}"]`);
+  const isNew = !wrapper;
+  if(isNew){ wrapper=document.createElement("div"); wrapper.dataset.key=key; }
+
+  wrapper.className = "bubble-wrapper" + (isMe?" mine":"");
+
+  // Build quoted block
+  let quotedHTML="";
+  if(data.replyTo){
+    const qt = data.replyTo;
+    quotedHTML=`<div class="quoted"><div class="q-name">${esc(qt.user)}</div>${esc(qt.text.length>80?qt.text.slice(0,80)+"…":qt.text)}</div>`;
+  }
+
+  wrapper.innerHTML = `
+    <div class="msg-meta">
+      <div class="msg-avatar" style="background:linear-gradient(135deg,${color},${userColor(data.user+'x')})"
+           data-user="${esc(data.user)}">${inits}</div>
+      <span class="msg-name">${esc(data.user)}</span>
+      <span class="msg-time" title="${esc(fullTime)}">${time}</span>
+    </div>
+    <div class="bubble">
+      ${quotedHTML}
+      <div class="content">${renderContent(data)}</div>
+    </div>
+    <div class="controls" style="${isMe?"":"display:none"}">
+      ${isMe ? `<button class="ctrl-btn edit-btn">✏️</button>` : ""}
+      <button class="ctrl-btn reply-ctrl">↩ Reply</button>
+      <button class="ctrl-btn copy-btn">📋</button>
+      ${isMe ? `<button class="ctrl-btn del">🗑️</button>` : ""}
+    </div>`;
+
+  // Wire buttons
+  if(isMe) wrapper.querySelector(".edit-btn")?.addEventListener("click",()=> startEdit(key, data.text));
+  wrapper.querySelector(".reply-ctrl")?.addEventListener("click",()=> setReply(key, data.user, data.text));
+  wrapper.querySelector(".copy-btn")?.addEventListener("click",()=>{
+    navigator.clipboard.writeText(data.text).then(()=> showToast("Copied!","📋",1600));
+  });
+  wrapper.querySelector(".del")?.addEventListener("click",async()=>{
+    const ok = await showModal({ title:"Delete message", body:"Remove this message for everyone?", confirmText:"Delete", danger:true });
+    if(ok) db.child(key).remove();
+  });
+
+  // Double-click own message to edit
+  if(isMe) wrapper.querySelector(".bubble")?.addEventListener("dblclick",()=> startEdit(key, data.text));
+
+  // Click bubble to copy (single click — only when not selecting text)
+  wrapper.querySelector(".bubble")?.addEventListener("click", e=>{
+    if(window.getSelection().toString()) return; // user is selecting text
+  });
+
+  // Swipe left to reply (mobile)
+  setupSwipeReply(wrapper, key, data);
+
+  if(isNew && append) msgList.appendChild(wrapper);
+
+  // Re-apply search highlight if active
+  if(searchQuery) applySearch(searchQuery);
+}
+
+/* ══════════════════════════════════════════════════════
+   SWIPE TO REPLY (mobile)
+══════════════════════════════════════════════════════ */
+function setupSwipeReply(wrapper, key, data){
+  let startX=0, startY=0, swiping=false;
+  wrapper.addEventListener("touchstart", e=>{
+    startX=e.touches[0].clientX; startY=e.touches[0].clientY; swiping=false;
+  },{passive:true});
+  wrapper.addEventListener("touchmove", e=>{
+    const dx=e.touches[0].clientX-startX;
+    const dy=Math.abs(e.touches[0].clientY-startY);
+    if(dy>20) return;
+    if(dx < -40){ swiping=true; wrapper.style.transform=`translateX(${Math.max(dx,-60)}px)`; wrapper.style.transition="none"; }
+  },{passive:true});
+  wrapper.addEventListener("touchend",()=>{
+    wrapper.style.transform=""; wrapper.style.transition="transform .2s";
+    if(swiping){ setReply(key, data.user, data.text); showToast("Replying to "+data.user,"↩",1400); }
+    setTimeout(()=>{ wrapper.style.transition=""; },200);
+  });
+}
+
+/* ══════════════════════════════════════════════════════
+   EDIT
+══════════════════════════════════════════════════════ */
+function cancelEdit(){
+  if(!activeEditKey) return;
+  const cached=msgCache[activeEditKey];
+  if(cached) renderMessage(activeEditKey, cached, false);
+  activeEditInput=null; activeEditKey=null;
+}
+
+function startEdit(key, currentText){
+  if(activeEditKey && activeEditKey!==key) cancelEdit();
+  activeEditKey=key;
+  const wrapper=document.querySelector(`[data-key="${key}"]`); if(!wrapper) return;
+  const contentEl=wrapper.querySelector(".content"); if(!contentEl) return;
+
+  const input=document.createElement("input");
+  input.type="text"; input.className="edit-input";
+  input.value=currentText; input.maxLength=MAX_LEN;
+  activeEditInput=input;
+
+  contentEl.replaceWith(input);
+  input.focus();
+  input.setSelectionRange(input.value.length, input.value.length);
+
+  function commitEdit(){
+    const newText=input.value.trim();
+    activeEditInput=null; activeEditKey=null;
+    if(!newText || newText===currentText){ const c=msgCache[key]; if(c) renderMessage(key,c,false); return; }
+    db.child(key).update({ text:newText, edited:true });
+    showToast("Message updated","✏️",1600);
+  }
+
+  input.addEventListener("keydown", e=>{
+    if(e.key==="Enter"){ commitEdit(); }
+    if(e.key==="Escape"){ activeEditInput=null; activeEditKey=null; const c=msgCache[key]; if(c) renderMessage(key,c,false); }
+    e.stopPropagation(); // don't let Escape close emoji popup
+  });
+
+  input.addEventListener("blur",()=>{
+    setTimeout(()=>{ if(activeEditInput===input) commitEdit(); },0);
+  });
+}
+
+/* ══════════════════════════════════════════════════════
+   FIREBASE LISTENERS
+══════════════════════════════════════════════════════ */
+db.on("child_added", snap=>{
+  const data=snap.val(), key=snap.key;
+  msgCache[key]=data;
+
+  const wasBottom=isNearBottom();
+  if(append) getOrInsertDateSep(data.time||Date.now());
+  renderMessage(key, data, true);
+
+  if(!initialLoad && data.user!==myName()){
+    bumpUnread();
+    pushNotification(data.user, data.text);
+  }
+  if(wasBottom || initialLoad) scrollToBottom(initialLoad);
+});
+
+// After first batch loaded
+db.once("value",()=>{
+  initialLoad=false;
+  scrollToBottom(true);
+});
+
+db.on("child_changed", snap=>{
+  const data=snap.val(), key=snap.key;
+  msgCache[key]=data;
+  if(activeEditKey===key) return;
+  renderMessage(key, data, false);
+});
+
+db.on("child_removed", snap=>{
+  const key=snap.key;
+  delete msgCache[key];
+  const el=document.querySelector(`[data-key="${key}"]`);
+  if(el) el.remove();
+  if(activeEditKey===key){ activeEditInput=null; activeEditKey=null; }
+});
+
+// Patch: `append` isn't defined in child_added scope — fix:
+// (Redefine cleanly)
+db.off("child_added");
+let firstBatchDone=false;
+db.once("value", snap=>{
+  snap.forEach(child=>{
+    const data=child.val(), key=child.key;
+    msgCache[key]=data;
+    getOrInsertDateSep(data.time||Date.now());
+    renderMessage(key,data,true);
+  });
+  firstBatchDone=true;
+  initialLoad=false;
+  scrollToBottom(true);
+});
+
+db.on("child_added", snap=>{
+  if(!firstBatchDone) return; // handled by once("value")
+  const data=snap.val(), key=snap.key;
+  if(msgCache[key]) return; // already rendered
+  msgCache[key]=data;
+
+  const wasBottom=isNearBottom();
+  getOrInsertDateSep(data.time||Date.now());
+  renderMessage(key,data,true);
+
+  if(data.user!==myName()){
+    bumpUnread();
+    pushNotification(data.user, data.text);
+  }
+  if(wasBottom) scrollToBottom(false);
+});
+
+/* ══════════════════════════════════════════════════════
+   RELATIVE TIME — update every minute
+══════════════════════════════════════════════════════ */
+setInterval(()=>{
+  document.querySelectorAll(".msg-time").forEach(el=>{
+    const wrapper=el.closest(".bubble-wrapper");
+    if(!wrapper) return;
+    const data=msgCache[wrapper.dataset.key];
+    if(!data) return;
+    el.textContent = relTime(data.time||Date.now());
+  });
+},60000);
+
+// Init relative times
+setTimeout(()=>{
+  document.querySelectorAll(".msg-time").forEach(el=>{
+    const wrapper=el.closest(".bubble-wrapper");
+    if(!wrapper) return;
+    const data=msgCache[wrapper.dataset.key];
+    if(data) el.textContent=relTime(data.time||Date.now());
+  });
+},500);
+
+/* ── Cleanup typing on page unload ── */
+window.addEventListener("beforeunload",()=> sendTyping(false));
+</script>
+</body>
+</html>
