@@ -34,8 +34,8 @@
     <div id="msg"></div>
     <div id="in">
         <input type="text" id="u" style="width: 50px; flex-grow: 0;" readonly>
-        <button id="emojiBtn" class="action-btn">😊</button>
-        <div id="emojiPopup">
+        <button id="emojiBtn" class="action-btn" onmousedown="event.preventDefault()">😊</button>
+        <div id="emojiPopup" onmousedown="event.preventDefault()">
             <span>😀</span><span>😂</span><span>🤣</span><span>😊</span><span>💀</span>
             <span>😍</span><span>😎</span><span>🤔</span><span>😴</span><span>😭</span>
             <span>😡</span><span>👍</span><span>👎</span><span>🔥</span><span>❤️</span>
@@ -58,8 +58,16 @@
     const emojiPopup = document.getElementById("emojiPopup");
     const m = document.getElementById("m");
 
-    emojiBtn.onclick = (e) => { e.stopPropagation(); emojiPopup.style.display = (emojiPopup.style.display === "grid") ? "none" : "grid"; };
-    emojiPopup.onclick = (e) => { if(e.target.tagName === 'SPAN') { m.value += e.target.innerText; m.focus(); emojiPopup.style.display = "none"; } };
+    emojiBtn.onclick = (e) => { emojiPopup.style.display = (emojiPopup.style.display === "grid") ? "none" : "grid"; };
+    
+    // Updated: Insert emoji into currently active input
+    emojiPopup.onclick = (e) => { 
+        if(e.target.tagName === 'SPAN') { 
+            const activeInput = document.activeElement;
+            activeInput.value += e.target.innerText;
+            activeInput.focus();
+        } 
+    };
 
     function sendMessage() {
         if(m.value.trim() !== "") { db.push({ user: myId, text: m.value.trim() }); m.value = ""; }
